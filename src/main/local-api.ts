@@ -20,11 +20,17 @@ import {
   resolveBundledTemplateDir,
 } from "./typst.js";
 import { createLogger } from "./logger.js";
+import { resolveSidecarExecPath } from "./runtime-config.js";
 
 const log = createLogger("local-api");
 
 const HOST = "127.0.0.1";
 const STARTUP_TIMEOUT_MS = 15_000;
+const electronProcess = process as NodeJS.Process & { helperExecPath?: string };
+const SIDECAR_EXEC_PATH = resolveSidecarExecPath({
+  execPath: process.execPath,
+  helperExecPath: electronProcess.helperExecPath,
+});
 
 export type LocalApi = {
   child: ChildProcess;
@@ -116,7 +122,7 @@ export async function startLocalApi(
   const env = buildChildEnv(port, webOrigin);
 
   log.info(`starting API sidecar: ${entry} on ${HOST}:${port}`);
-  const child = spawn(process.execPath, [entry], {
+  const child = spawn(SIDECAR_EXEC_PATH, [entry], {
     cwd: runtimePaths.api(),
     env,
     stdio: ["ignore", "pipe", "pipe"],
