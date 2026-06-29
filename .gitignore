@@ -1,0 +1,14 @@
+node_modules/
+dist/
+release/
+.tmp/
+.env
+.DS_Store
+
+# Bundled binaries and fonts are fetched/copied by build scripts or CI, never
+# committed directly. Keep the directory structure via .gitkeep / README only.
+resources/bin/typst/**/typst
+resources/bin/typst/**/typst.exe
+resources/fonts/**/*.otf
+resources/fonts/**/*.ttf
+resources/fonts/**/*.ttc
