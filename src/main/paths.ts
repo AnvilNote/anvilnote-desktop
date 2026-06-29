@@ -8,6 +8,7 @@
 // templates, installer.
 
 import { app } from "electron";
+import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,3 +44,29 @@ export const repoResources = {
   fonts: () => path.join(repoRoot, "resources", "fonts"),
   templates: () => path.join(repoRoot, "resources", "templates"),
 };
+
+// ─── User data (writable) ───────────────────────────────────────────────────
+// Default storage lives under ~/Downloads/AnvilNote (overridable). This is
+// where the local API keeps its SQLite database and render artifacts, so the
+// user's notes/PDFs land somewhere visible rather than inside the .app bundle.
+
+export function userDataDir(): string {
+  const override = process.env.ANVILNOTE_DESKTOP_DATA_DIR;
+  if (override && override.trim()) return override.trim();
+  return path.join(os.homedir(), "Downloads", "AnvilNote");
+}
+
+export const userData = {
+  root: () => userDataDir(),
+  databaseFile: () => path.join(userDataDir(), "anvilnote.db"),
+  storage: () => path.join(userDataDir(), "storage"),
+  typstStorage: () => path.join(userDataDir(), "storage", "typst"),
+  pdfStorage: () => path.join(userDataDir(), "storage", "pdf"),
+};
+
+// ─── Web sidecar (Next.js standalone) ───────────────────────────────────────
+// `next build` with output:"standalone" emits a server.js; copy-web.mjs stages
+// it (plus .next/static and public) under dist/app/web.
+export function webServerEntry(): string {
+  return path.join(runtimePaths.web(), "server.js");
+}
