@@ -1,0 +1,11 @@
+{
+  "name": "anvilnote-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Desktop packaging and Electron shell for AnvilNote.",
+  "type": "module",
+  "scripts": {
+    "check": "node --version",
+    "clean": "node scripts/clean.mjs"
+  }
+}
