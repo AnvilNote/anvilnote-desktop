@@ -2,12 +2,17 @@
 // surface to the renderer instead of leaking Node into the page.
 
 import { contextBridge } from "electron";
+import { ipcRenderer } from "electron";
 
 const api = {
   // The local API base URL is provided to the renderer through a global so the
   // web app can target the bundled sidecar instead of a remote server.
   getApiBaseUrl(): string | null {
-    return process.env.ANVILNOTE_API_BASE_URL ?? null;
+    try {
+      return ipcRenderer.sendSync("anvilnote:get-api-base-url") ?? null;
+    } catch {
+      return null;
+    }
   },
   versions: {
     app: process.env.ANVILNOTE_APP_VERSION ?? "0.0.0",

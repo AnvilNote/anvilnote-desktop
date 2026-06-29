@@ -66,6 +66,11 @@ if (process.env.ANVILNOTE_SKIP_API_DEPS === "1") {
       "--config.node-linker=hoisted",
       "--ignore-workspace",
       "--no-frozen-lockfile",
+      // pnpm 11 hard-fails (exit 1) on ignored build scripts. We deliberately
+      // skip Prisma's postinstall: the runtime only loads the SQLite client
+      // (generated separately, ships its own engine) and imports @prisma/client
+      // type-only, so no default client generation is needed here.
+      "--config.strict-dep-builds=false",
     ],
     dest,
   );

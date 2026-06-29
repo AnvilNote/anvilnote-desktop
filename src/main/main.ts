@@ -5,7 +5,7 @@
 //        best-effort so a window still opens while pieces are missing.
 // Prod:  loads the bundled web build and requires the API sidecar.
 
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain, session } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
@@ -13,6 +13,7 @@ import { repoRoot, runtimePaths, isPackaged } from "./paths.js";
 import { startLocalApi, stopLocalApi } from "./local-api.js";
 import { startLocalWeb, stopLocalWeb } from "./local-web.js";
 import { createLogger } from "./logger.js";
+import { rewriteDevApiUrl } from "./request-routing.js";
 
 const log = createLogger("main");
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -29,6 +30,15 @@ const webPort = Number(process.env.ANVILNOTE_WEB_PORT ?? DEFAULT_WEB_PORT);
 
 let mainWindow: BrowserWindow | null = null;
 let appUrl: string | null = null;
+let currentApiBaseUrl = `http://127.0.0.1:${apiPort}`;
+
+// Must run after app is ready; session.defaultSession throws otherwise.
+function registerApiRequestRouting(): void {
+  session.defaultSession.webRequest.onBeforeRequest((details, callback) => {
+    const redirectURL = rewriteDevApiUrl(details.url, currentApiBaseUrl);
+    callback(redirectURL ? { redirectURL } : {});
+  });
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -39,7 +49,7 @@ function createWindow(): void {
     title: "AnvilNote",
     show: false,
     webPreferences: {
-      preload: path.join(moduleDir, "preload.js"),
+      preload: path.join(moduleDir, "preload.cjs"),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
@@ -79,8 +89,10 @@ for development.</p></body></html>`;
 }
 
 async function bootstrap(): Promise<void> {
+  registerApiRequestRouting();
+
   // 1. API sidecar (SQLite under ~/Downloads). Required in production.
-  let apiBaseUrl = `http://127.0.0.1:${apiPort}`;
+  let apiBaseUrl = currentApiBaseUrl;
   const webOrigin = `http://127.0.0.1:${webPort}`;
   try {
     const api = await startLocalApi(apiPort, webOrigin);
@@ -91,6 +103,7 @@ async function bootstrap(): Promise<void> {
     if (app.isPackaged) log.error(`failed to start API sidecar: ${message}`);
     else log.warn(`API sidecar not started (dev, continuing): ${message}`);
   }
+  currentApiBaseUrl = apiBaseUrl;
 
   // 2. Web content. Dev URL wins; otherwise start the Next standalone sidecar.
   const devUrl = process.env.ANVILNOTE_WEB_DEV_URL;
@@ -129,6 +142,10 @@ function stopSidecars(): void {
 }
 app.on("before-quit", stopSidecars);
 process.on("exit", stopSidecars);
+
+ipcMain.on("anvilnote:get-api-base-url", (event) => {
+  event.returnValue = currentApiBaseUrl;
+});
 
 log.info(
   `AnvilNote Desktop starting (packaged=${isPackaged()}, apiPort=${apiPort}, webPort=${webPort})`,

@@ -9,11 +9,17 @@ import net from "node:net";
 import fs from "node:fs";
 import { webServerEntry } from "./paths.js";
 import { createLogger } from "./logger.js";
+import { resolveSidecarExecPath } from "./runtime-config.js";
 
 const log = createLogger("local-web");
 
 const HOST = "127.0.0.1";
 const STARTUP_TIMEOUT_MS = 20_000;
+const electronProcess = process as NodeJS.Process & { helperExecPath?: string };
+const SIDECAR_EXEC_PATH = resolveSidecarExecPath({
+  execPath: process.execPath,
+  helperExecPath: electronProcess.helperExecPath,
+});
 
 export type LocalWeb = {
   child: ChildProcess;
@@ -61,7 +67,7 @@ export async function startLocalWeb(
   }
 
   log.info(`starting web sidecar: ${entry} on ${HOST}:${port}`);
-  const child = spawn(process.execPath, [entry], {
+  const child = spawn(SIDECAR_EXEC_PATH, [entry], {
     env: {
       ...process.env,
       ELECTRON_RUN_AS_NODE: "1",
