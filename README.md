@@ -134,10 +134,13 @@ as the Node runtime (`ELECTRON_RUN_AS_NODE=1`, no system Node), bound to
 - ✅ **anvilnote-web** — `output: "standalone"`; runs as a localhost sidecar.
 - ✅ **anvilnote-renderer** — `build:desktop` produces a bundled `dist/cli.js`
   (no node_modules at runtime); uses `TYPST_BIN` + `ANVILNOTE_FONT_DIR`.
-- ⏳ **anvilnote-api** — needs embedded SQLite (separate desktop Prisma schema so
-  the cloud Postgres build is unaffected), its production `node_modules`/Prisma
-  engine bundled for the target arch, and a first-run `migrate deploy`. Tracked
-  below.
+- ✅ **anvilnote-api** — embedded SQLite via a separate desktop Prisma schema
+  (`prisma/sqlite.prisma`, cloud Postgres untouched); client selected at runtime
+  by a `file:` `DATABASE_URL`; schema created on first boot; binds `127.0.0.1`.
+  ⏳ Remaining (macOS packaging only): stage the API's **production
+  `node_modules`** with Prisma engines for the target macOS arch — pnpm's
+  symlinked store means this must be produced on macOS, e.g.
+  `pnpm --dir ../anvilnote-api deploy --prod <dist/app/api>`.
 
 ### anvilnote-api
 
