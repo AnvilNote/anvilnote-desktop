@@ -1,0 +1,5 @@
+Placeholder for the macOS app icon.
+
+Replace this with `icon.icns` (generate from a 1024x1024 PNG, e.g. via
+`iconutil` or `electron-icon-builder`). electron-builder will pick up
+`build/icon.icns` automatically.

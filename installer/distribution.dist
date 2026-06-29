@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Distribution XML skeleton for a productbuild-based .pkg installer.
+
+  This drives the professional installer flow (Welcome / Read Me / License /
+  Conclusion) and installs AnvilNote into /Applications. electron-builder's
+  default pkg target does not use this file; wire it in via
+  scripts/make-pkg.sh (pkgbuild + productbuild) when a fully custom installer
+  is required.
+
+  The referenced component package (AnvilNote-component.pkg) is produced by
+  pkgbuild from release/mac/AnvilNote.app — see scripts/make-pkg.sh.
+-->
+<installer-gui-script minSpecVersion="2">
+    <title>AnvilNote</title>
+
+    <welcome    file="welcome.rtf"    mime-type="text/rtf"/>
+    <readme     file="readme.rtf"     mime-type="text/rtf"/>
+    <license    file="license.rtf"    mime-type="text/rtf"/>
+    <conclusion file="conclusion.rtf" mime-type="text/rtf"/>
+
+    <options customize="never" require-scripts="false" hostArchitectures="arm64,x86_64"/>
+
+    <domains enable_anywhere="false" enable_currentUserHome="false" enable_localSystem="true"/>
+
+    <!-- Install into /Applications. -->
+    <choices-outline>
+        <line choice="default">
+            <line choice="com.anvilnote.app"/>
+        </line>
+    </choices-outline>
+
+    <choice id="default"/>
+    <choice id="com.anvilnote.app" visible="false">
+        <pkg-ref id="com.anvilnote.app"/>
+    </choice>
+
+    <pkg-ref id="com.anvilnote.app"
+             version="0.1.0"
+             auth="root"
+             installKBytes="0">AnvilNote-component.pkg</pkg-ref>
+</installer-gui-script>

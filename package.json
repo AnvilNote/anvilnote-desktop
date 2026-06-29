@@ -4,8 +4,33 @@
   "private": true,
   "description": "Desktop packaging and Electron shell for AnvilNote.",
   "type": "module",
+  "main": "dist/main/main.js",
   "scripts": {
     "check": "node --version",
-    "clean": "node scripts/clean.mjs"
+    "clean": "node scripts/clean.mjs",
+    "check:repos": "node scripts/ensure-sibling-repos.mjs",
+    "build:web": "node scripts/build-web.mjs",
+    "build:api": "node scripts/build-api.mjs",
+    "build:renderer": "node scripts/build-renderer.mjs",
+    "copy:web": "node scripts/copy-web.mjs",
+    "copy:api": "node scripts/copy-api.mjs",
+    "copy:renderer": "node scripts/copy-renderer.mjs",
+    "copy:resources": "node scripts/copy-resources.mjs",
+    "prepare:desktop": "node scripts/prepare-desktop.mjs",
+    "build:main": "tsc -p tsconfig.json",
+    "dev": "pnpm build:main && electron dist/main/main.js",
+    "pack": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dir --config electron-builder.config.cjs",
+    "dist:dmg": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dmg --config electron-builder.config.cjs",
+    "dist:pkg": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac pkg --config electron-builder.config.cjs",
+    "dist:mac": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dmg pkg --config electron-builder.config.cjs"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "electron": "^33.3.1",
+    "electron-builder": "^25.1.8",
+    "typescript": "^5.7.3"
   }
 }
