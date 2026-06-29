@@ -73,6 +73,13 @@ The binary is not committed (large, gitignored); stage it under
 `resources/bin/typst/<arch>/typst` or fetch it via CI. See
 `resources/bin/typst/README.md`.
 
+During `pnpm prepare:desktop` / `pnpm dist:*`, the build now verifies that a
+target-arch Typst binary is actually shippable. It prefers the staged
+`resources/bin/typst/<arch>/typst`; if that is missing it falls back to
+`ANVILNOTE_TYPST_PATH`, then to `which typst`, and copies the resolved binary
+into `dist/app/bin/typst/<arch>/typst`. If none of those exist, packaging fails
+early with a clear error instead of producing a broken app.
+
 ## Fonts
 
 - Bundled fonts go under `resources/fonts` **only after license review**.
@@ -127,7 +134,9 @@ as the Node runtime (`ELECTRON_RUN_AS_NODE=1`, no system Node), bound to
    CLI for each render.
 2. **Web** — the Next.js standalone server (`web/server.js`), on `webPort`
    (default 38318). Electron loads `http://127.0.0.1:<webPort>`; the preload
-   bridge hands the web app the API base URL at runtime.
+   bridge hands the web app the API base URL at runtime via a renderer launch
+   argument, so the packaged client follows the actual sidecar port instead of a
+   build-time localhost fallback.
 
 ## Runtime contract (status)
 
