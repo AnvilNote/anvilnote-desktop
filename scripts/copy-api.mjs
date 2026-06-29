@@ -1,21 +1,22 @@
 // Copy the API runtime into dist/app/api: the compiled `dist`, the generated
-// SQLite Prisma client, package.json, and the Prisma schemas.
+// SQLite Prisma client, package.json, the Prisma schemas, and a self-contained
+// production node_modules.
 //
-// IMPORTANT (production node_modules): the API is not bundled, so it needs its
-// production dependencies (@prisma/client, the generated SQLite client's engine,
-// express, etc.) at runtime. Because pnpm uses a symlinked store, those are NOT
-// copied here. During macOS packaging, produce a self-contained, prod-only
-// node_modules next to dist/app/api — e.g.:
+// The API is not bundled (Prisma), so it needs its prod dependencies at runtime.
+// We install them with a HOISTED linker so the result is a real, copyable,
+// packageable node_modules (pnpm's default symlinked store is not). The runtime
+// only loads the SQLite client (require of dist/generated/sqlite-client, which
+// ships its own engine); @prisma/client is imported type-only, so no default
+// client generation is required.
 //
-//     pnpm --dir <anvilnote-api> deploy --prod --legacy <dist/app/api>
-//
-// and ensure the Prisma engines for the target macOS arch are present
-// (prisma/sqlite.prisma sets binaryTargets darwin/darwin-arm64). This must run
-// on (or fetch engines for) macOS — see README runtime contract.
+// IMPORTANT: the Prisma SQLite engine is platform-specific. Run `prepare`/`pack`
+// on the TARGET macOS arch so build:desktop generates the darwin engine
+// (prisma/sqlite.prisma sets binaryTargets darwin/darwin-arm64). Set
+// ANVILNOTE_SKIP_API_DEPS=1 to skip the install during fast dev iteration.
 
 import fs from "node:fs";
 import path from "node:path";
-import { config, ensureDir, copyInto, fail, logStep } from "./load-env.mjs";
+import { config, ensureDir, copyInto, fail, run, logStep } from "./load-env.mjs";
 
 const c = config();
 logStep("Copying API runtime -> dist/app/api");
@@ -47,7 +48,26 @@ if (fs.existsSync(generated)) {
   );
 }
 
-console.log(
-  "\nNOTE: production node_modules (incl. Prisma engines for macOS) are NOT " +
-    "bundled here — add them during macOS packaging (see file header / README).",
-);
+// Production node_modules (hoisted so it's self-contained and packageable).
+if (process.env.ANVILNOTE_SKIP_API_DEPS === "1") {
+  console.log("\nANVILNOTE_SKIP_API_DEPS=1 — skipping prod node_modules install.");
+} else {
+  const lock = path.join(c.apiDir, "pnpm-lock.yaml");
+  if (!fs.existsSync(lock)) {
+    fail(`pnpm-lock.yaml not found at ${lock}; cannot stage a reproducible node_modules.`);
+  }
+  copyInto(lock, dest, "pnpm-lock.yaml");
+  logStep("Installing API production node_modules (hoisted) -> dist/app/api/node_modules");
+  run(
+    "pnpm",
+    [
+      "install",
+      "--prod",
+      "--config.node-linker=hoisted",
+      "--ignore-workspace",
+      "--no-frozen-lockfile",
+    ],
+    dest,
+  );
+  console.log("API prod node_modules staged.");
+}
