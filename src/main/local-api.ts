@@ -13,7 +13,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import net from "node:net";
 import fs from "node:fs";
 import path from "node:path";
-import { runtimePaths } from "./paths.js";
+import { runtimePaths, userData } from "./paths.js";
 import {
   resolveTypstBinaryPath,
   resolveBundledFontDir,
@@ -48,10 +48,15 @@ function resolveApiEntry(): string {
 }
 
 /** Resolve once so failures surface as clear errors before spawning. */
-function buildChildEnv(port: number): NodeJS.ProcessEnv {
+function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
   const typstPath = resolveTypstBinaryPath();
   const fontDir = resolveBundledFontDir();
   const templateDir = resolveBundledTemplateDir();
+
+  // Writable storage + SQLite DB under ~/Downloads/AnvilNote (created up front so
+  // the API never has to mkdir into a missing parent).
+  fs.mkdirSync(userData.typstStorage(), { recursive: true });
+  fs.mkdirSync(userData.pdfStorage(), { recursive: true });
 
   return {
     ...process.env,
@@ -59,9 +64,18 @@ function buildChildEnv(port: number): NodeJS.ProcessEnv {
     NODE_ENV: "production",
     HOST,
     PORT: String(port),
-    ANVILNOTE_RENDERER_DIR: runtimePaths.renderer(),
-    // The renderer reads TYPST_BIN; we also expose ANVILNOTE_TYPST_PATH for the
-    // API contract. Keep both in sync.
+    // Embedded SQLite database (desktop). The API's Prisma datasource reads
+    // DATABASE_URL; a file: URL keeps everything local, no server required.
+    DATABASE_URL: `file:${userData.databaseFile()}`,
+    // Writable storage dirs (never inside the read-only .app bundle).
+    STORAGE_DIR: userData.storage(),
+    TYPST_STORAGE_DIR: userData.typstStorage(),
+    PDF_STORAGE_DIR: userData.pdfStorage(),
+    // Allow the web sidecar origin through CORS.
+    ...(webOrigin ? { CORS_ORIGIN: webOrigin } : {}),
+    // The API reads ANVILNOTE_RENDERER_PATH (not _DIR) to locate the renderer.
+    ANVILNOTE_RENDERER_PATH: runtimePaths.renderer(),
+    // The renderer reads TYPST_BIN; also expose ANVILNOTE_TYPST_PATH for parity.
     ANVILNOTE_TYPST_PATH: typstPath,
     TYPST_BIN: typstPath,
     ANVILNOTE_FONT_DIR: fontDir,
@@ -92,11 +106,14 @@ function waitForPort(port: number, timeoutMs: number): Promise<void> {
   });
 }
 
-export async function startLocalApi(port: number): Promise<LocalApi> {
+export async function startLocalApi(
+  port: number,
+  webOrigin?: string,
+): Promise<LocalApi> {
   if (current) return current;
 
   const entry = resolveApiEntry();
-  const env = buildChildEnv(port);
+  const env = buildChildEnv(port, webOrigin);
 
   log.info(`starting API sidecar: ${entry} on ${HOST}:${port}`);
   const child = spawn(process.execPath, [entry], {

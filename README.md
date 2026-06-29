@@ -103,10 +103,41 @@ Not done yet. Before public release this needs:
 These are intentionally left as TODOs in `electron-builder.config.cjs` and
 `scripts/make-pkg.sh`.
 
-## Runtime contract (gaps to close in the sibling repos)
+## Storage
 
-The desktop shell is wired up, but the sibling repos need small additions to be
-fully self-contained. Until then, `prepare:desktop` will surface clear errors.
+The local API stores its data outside the read-only `.app` bundle. Default root
+is **`~/Downloads/AnvilNote`** (override with `ANVILNOTE_DESKTOP_DATA_DIR`):
+
+```
+~/Downloads/AnvilNote/
+├── anvilnote.db          # embedded SQLite database
+└── storage/
+    ├── typst/            # transient render inputs / .typ
+    └── pdf/              # rendered PDFs
+```
+
+## Runtime architecture (two sidecars)
+
+The Electron main process starts two local sidecars, both using Electron itself
+as the Node runtime (`ELECTRON_RUN_AS_NODE=1`, no system Node), bound to
+`127.0.0.1` only:
+
+1. **API** — the bundled anvilnote-api (`dist/server.js`), on `apiPort`
+   (default 38317), using the embedded SQLite DB above. It spawns the renderer
+   CLI for each render.
+2. **Web** — the Next.js standalone server (`web/server.js`), on `webPort`
+   (default 38318). Electron loads `http://127.0.0.1:<webPort>`; the preload
+   bridge hands the web app the API base URL at runtime.
+
+## Runtime contract (status)
+
+- ✅ **anvilnote-web** — `output: "standalone"`; runs as a localhost sidecar.
+- ✅ **anvilnote-renderer** — `build:desktop` produces a bundled `dist/cli.js`
+  (no node_modules at runtime); uses `TYPST_BIN` + `ANVILNOTE_FONT_DIR`.
+- ⏳ **anvilnote-api** — needs embedded SQLite (separate desktop Prisma schema so
+  the cloud Postgres build is unaffected), its production `node_modules`/Prisma
+  engine bundled for the target arch, and a first-run `migrate deploy`. Tracked
+  below.
 
 ### anvilnote-api
 

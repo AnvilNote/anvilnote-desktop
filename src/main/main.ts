@@ -7,11 +7,11 @@
 
 import { app, BrowserWindow } from "electron";
 import path from "node:path";
-import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
 import { repoRoot, runtimePaths, isPackaged } from "./paths.js";
 import { startLocalApi, stopLocalApi } from "./local-api.js";
+import { startLocalWeb, stopLocalWeb } from "./local-web.js";
 import { createLogger } from "./logger.js";
 
 const log = createLogger("main");
@@ -22,10 +22,13 @@ if (!app.isPackaged) {
   dotenv.config({ path: path.join(repoRoot, ".env") });
 }
 
-const DEFAULT_PORT = 38317;
-const port = Number(process.env.ANVILNOTE_DESKTOP_PORT ?? DEFAULT_PORT);
+const DEFAULT_API_PORT = 38317;
+const DEFAULT_WEB_PORT = 38318;
+const apiPort = Number(process.env.ANVILNOTE_DESKTOP_PORT ?? DEFAULT_API_PORT);
+const webPort = Number(process.env.ANVILNOTE_WEB_PORT ?? DEFAULT_WEB_PORT);
 
 let mainWindow: BrowserWindow | null = null;
+let appUrl: string | null = null;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -52,52 +55,54 @@ function createWindow(): void {
 }
 
 async function loadAppContent(win: BrowserWindow): Promise<void> {
-  const devUrl = process.env.ANVILNOTE_WEB_DEV_URL;
-  if (!app.isPackaged && devUrl) {
-    log.info(`loading dev web URL: ${devUrl}`);
-    await win.loadURL(devUrl);
+  if (appUrl) {
+    log.info(`loading web: ${appUrl}`);
+    await win.loadURL(appUrl);
     return;
   }
-
-  const indexHtml = path.join(runtimePaths.web(), "index.html");
-  if (fs.existsSync(indexHtml)) {
-    log.info(`loading bundled web: ${indexHtml}`);
-    await win.loadFile(indexHtml);
-    return;
-  }
-
-  log.warn(`bundled web not found at ${indexHtml}; showing placeholder`);
-  await win.loadURL(placeholderPage(indexHtml));
+  log.warn("no web URL available; showing placeholder");
+  await win.loadURL(placeholderPage(runtimePaths.web()));
 }
 
-// Shown until the web build is wired in. anvilnote-web is a Next.js app, so it
-// must provide a static export (output: "export") or a bundled server before a
-// real index.html exists here — see README "Runtime contract".
+// Shown only if no web URL could be resolved (sidecar failed and no dev URL).
 function placeholderPage(expectedPath: string): string {
   const html = `<!doctype html><html><head><meta charset="utf-8">
 <title>AnvilNote Desktop</title>
 <style>body{font:14px/1.6 -apple-system,system-ui,sans-serif;margin:3rem;color:#1f2328}
 code{background:#f5f5f4;padding:.1rem .3rem;border-radius:4px}</style></head>
 <body><h1>AnvilNote Desktop shell</h1>
-<p>The Electron shell is running, but no bundled web build was found.</p>
-<p>Expected: <code>${expectedPath}</code></p>
+<p>The Electron shell is running, but the web server sidecar did not start.</p>
+<p>Expected the Next standalone build at: <code>${expectedPath}/server.js</code></p>
 <p>Run <code>pnpm prepare:desktop</code>, or set <code>ANVILNOTE_WEB_DEV_URL</code>
-for development. See the README runtime contract for the Next.js static-export
-requirement.</p></body></html>`;
+for development.</p></body></html>`;
   return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
 }
 
 async function bootstrap(): Promise<void> {
-  // Start the API sidecar. Required in production; best-effort in dev.
+  // 1. API sidecar (SQLite under ~/Downloads). Required in production.
+  let apiBaseUrl = `http://127.0.0.1:${apiPort}`;
+  const webOrigin = `http://127.0.0.1:${webPort}`;
   try {
-    const api = await startLocalApi(port);
+    const api = await startLocalApi(apiPort, webOrigin);
+    apiBaseUrl = api.baseUrl;
     process.env.ANVILNOTE_API_BASE_URL = api.baseUrl;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    if (app.isPackaged) {
-      log.error(`failed to start API sidecar: ${message}`);
-    } else {
-      log.warn(`API sidecar not started (dev, continuing): ${message}`);
+    if (app.isPackaged) log.error(`failed to start API sidecar: ${message}`);
+    else log.warn(`API sidecar not started (dev, continuing): ${message}`);
+  }
+
+  // 2. Web content. Dev URL wins; otherwise start the Next standalone sidecar.
+  const devUrl = process.env.ANVILNOTE_WEB_DEV_URL;
+  if (!app.isPackaged && devUrl) {
+    appUrl = devUrl;
+  } else {
+    try {
+      const web = await startLocalWeb(webPort, apiBaseUrl);
+      appUrl = web.baseUrl;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      log.error(`failed to start web sidecar: ${message}`);
     }
   }
 
@@ -117,8 +122,14 @@ app.on("activate", () => {
 // down with the app in this skeleton.
 app.on("window-all-closed", () => app.quit());
 
-// Ensure no zombie sidecar survives the app.
-app.on("before-quit", () => stopLocalApi());
-process.on("exit", () => stopLocalApi());
+// Ensure no zombie sidecars survive the app.
+function stopSidecars(): void {
+  stopLocalWeb();
+  stopLocalApi();
+}
+app.on("before-quit", stopSidecars);
+process.on("exit", stopSidecars);
 
-log.info(`AnvilNote Desktop starting (packaged=${isPackaged()}, port=${port})`);
+log.info(
+  `AnvilNote Desktop starting (packaged=${isPackaged()}, apiPort=${apiPort}, webPort=${webPort})`,
+);

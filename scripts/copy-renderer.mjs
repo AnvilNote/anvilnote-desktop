@@ -28,6 +28,6 @@ const templates = path.join(c.rendererDir, "templates");
 if (fs.existsSync(templates)) copyInto(templates, dest, "templates");
 
 console.log(
-  "\nNOTE: node_modules were not bundled. The renderer should ship a bundled " +
-    "production entry for a self-contained app — see README runtime contract.",
+  "\nrenderer staged. dist/cli.js is the esbuild bundle (build:desktop), so no " +
+    "node_modules are needed at runtime; templates are copied alongside.",
 );
