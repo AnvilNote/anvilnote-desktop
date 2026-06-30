@@ -1,198 +1,143 @@
 # AnvilNote Desktop
 
-Packaging project that assembles **AnvilNote Web**, **AnvilNote API**, and
-**AnvilNote Renderer**, together with a bundled Typst binary, fonts, templates,
-and installer resources, into a macOS desktop application.
+[![Release](https://img.shields.io/badge/Release-v0.1.0-black?style=for-the-badge)](https://github.com/AnvilNote/anvilnote-desktop/releases/tag/v0.1.0)
+[![Downloads](https://img.shields.io/badge/Downloads-GitHub-black?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
+[![macOS](https://img.shields.io/badge/macOS-Apple-black?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
+[![Electron](https://img.shields.io/badge/Electron-Desktop-black?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
 
-This is **not** a monorepo. It does not contain the source of the other apps —
-it only reads, builds, copies, and packages their build artifacts.
+AnvilNote Desktop 是 AnvilNote 的 macOS 桌面包裝專案。它把 Electron shell、AnvilNote Web、AnvilNote API、AnvilNote Renderer、Typst、字型、模板與安裝資源組裝成可下載的桌面應用程式。
 
-## Expected sibling repos
+這個 repo 是使用者下載桌面版的唯一入口。Release、安裝檔、版本 tag、下載說明與未簽章注意事項都集中在這裡。
 
-By default these live next to this repo (override paths in `.env`):
+## 下載
 
-```
+- Release 頁面：https://github.com/AnvilNote/anvilnote-desktop/releases
+- 目前版本：[`v0.1.0`](https://github.com/AnvilNote/anvilnote-desktop/releases/tag/v0.1.0)
+
+Release 會提供以下安裝產物：
+
+- `.dmg`：適合大多數使用者直接拖拉安裝
+- `.pkg`：適合需要安裝流程與安裝頁面的使用情境
+
+## 未簽章說明
+
+目前釋出的 macOS 安裝檔尚未完成 code signing 與 notarization。第一次下載或開啟時，macOS 可能會顯示安全警告，這是目前已知且預期中的行為。
+
+如果 macOS 阻擋開啟，請使用以下方式：
+
+1. 在 Finder 找到下載好的 `.app`、`.dmg` 或安裝完成後的 App。
+2. 對 App 按右鍵，選擇「打開」。
+3. 若仍被阻擋，前往「系統設定 > 隱私權與安全性」，允許該 App 開啟後再重新執行。
+
+正式對外發布前，這個 repo 仍需要補齊以下流程：
+
+- Developer ID Application certificate
+- Developer ID Installer certificate
+- Hardened Runtime
+- Notarization
+- Stapling
+
+## 目前支援語言
+
+AnvilNote Desktop 目前隨附的 Web i18n 語言如下：
+
+| Language | Locale |
+| --- | --- |
+| English | `en` |
+| 繁體中文 | `zh-TW` |
+| 日本語 | `ja` |
+| 한국어 | `ko` |
+| ไทย | `th` |
+| Русский | `ru` |
+
+## 專案定位
+
+這不是 monorepo。這個 repo 不包含其他 AnvilNote 應用的完整原始碼，而是負責讀取、建置、拷貝與封裝其他 sibling repos 的輸出產物。
+
+預設會使用同層目錄下的 sibling repos：
+
+```sh
 ../anvilnote-web
 ../anvilnote-api
 ../anvilnote-renderer
 ```
 
-## Architecture
+如有需要，可透過 `.env` 覆寫路徑設定。
 
-```
+## 打包內容
+
+```text
 AnvilNote.app
-├── Electron shell            (this repo: src/main)
-├── bundled anvilnote-web     (static build → Resources/web)
-├── bundled anvilnote-api     (local sidecar → Resources/api)
-├── bundled anvilnote-renderer(→ Resources/renderer)
-├── bundled Typst binary      (Resources/bin/typst/<arch>/typst)
-├── bundled fonts             (Resources/fonts)
-├── bundled templates         (Resources/templates)
-└── installer resources       (Resources/installer)
+├── Electron shell
+├── bundled anvilnote-web
+├── bundled anvilnote-api
+├── bundled anvilnote-renderer
+├── bundled Typst binary
+├── bundled fonts
+├── bundled templates
+└── installer resources
 ```
 
-`pnpm prepare:desktop` assembles everything into `dist/app/`, and
-electron-builder lifts that tree into the packaged app's `Resources`.
+`pnpm prepare:desktop` 會先把需要的內容組到 `dist/app/`，再由 `electron-builder` 打包成桌面應用程式。
 
-## Local development
+## 本機開發
 
 ```sh
 cp .env.example .env
 pnpm install
-pnpm check:repos        # verify sibling repos exist
-pnpm dev                # compile main + launch Electron
+pnpm check:repos
+pnpm dev
 ```
 
-In dev, if `ANVILNOTE_WEB_DEV_URL` is set the shell loads that URL; otherwise it
-loads the bundled web build (run `pnpm prepare:desktop` first). The API sidecar
-is started best-effort in dev so a window still opens while pieces are missing.
+開發模式下：
 
-## Packaging (macOS only)
+- 若設定 `ANVILNOTE_WEB_DEV_URL`，Electron 會直接載入該 URL
+- 否則會使用本地打包後的 Web 產物
+- API sidecar 在開發環境會以 best-effort 方式啟動
+
+## 打包指令
 
 ```sh
-pnpm pack          # unsigned .app under release/mac/
-pnpm dist:dmg      # .dmg
-pnpm dist:pkg      # .pkg
-pnpm dist:mac      # .dmg + .pkg
+pnpm pack
+pnpm dist:dmg
+pnpm dist:pkg
+pnpm dist:mac
 ```
 
-The professional `productbuild` installer flow (Welcome / Read Me / License /
-Conclusion) is sketched in `installer/distribution.dist` and
-`scripts/make-pkg.sh`.
+用途如下：
 
-## Typst binary
+- `pnpm pack`：產生未安裝的 `.app` 目錄，方便本機快速驗證
+- `pnpm dist:dmg`：產生 `.dmg`
+- `pnpm dist:pkg`：產生 `.pkg`
+- `pnpm dist:mac`：同時產生 `.dmg` 與 `.pkg`
 
-- Users do **not** need Typst installed.
-- The desktop app must use the **bundled** Typst binary.
-- Development builds may use `ANVILNOTE_TYPST_PATH` for local testing.
-- Production builds resolve Typst from `process.resourcesPath`
-  (`bin/typst/darwin-arm64/typst` or `bin/typst/darwin-x64/typst`), never the
-  system `PATH`.
+## 執行環境與限制
 
-The binary is not committed (large, gitignored); stage it under
-`resources/bin/typst/<arch>/typst` or fetch it via CI. See
-`resources/bin/typst/README.md`.
+- 僅支援 macOS
+- 不需要使用者另外安裝 Node.js
+- 不需要使用者另外安裝 Typst
+- 不依賴外部雲端服務
+- 本地 API 僅綁定 `127.0.0.1`
+- 目前沒有 auto-update
+- 目前沒有 login / cloud sync
 
-During `pnpm prepare:desktop` / `pnpm dist:*`, the build now verifies that a
-target-arch Typst binary is actually shippable. It prefers the staged
-`resources/bin/typst/<arch>/typst`; if that is missing it falls back to
-`ANVILNOTE_TYPST_PATH`, then to `which typst`, and copies the resolved binary
-into `dist/app/bin/typst/<arch>/typst`. If none of those exist, packaging fails
-early with a clear error instead of producing a broken app.
+## Typst、字型與模板
 
-## Fonts
+- 使用者不需要自行安裝 Typst
+- 桌面版必須使用 bundle 內的 Typst binary
+- 開發環境可透過 `ANVILNOTE_TYPST_PATH` 覆寫 Typst 路徑
+- 字型與模板會從 bundle 內的資源目錄提供給 renderer
 
-- Bundled fonts go under `resources/fonts` **only after license review**.
-- Typst receives this directory via `ANVILNOTE_FONT_DIR` (or `--font-path`).
-- Actual font files are gitignored until bundling is authorized.
+## 資料儲存
 
-## Installer
+本地 API 會把資料寫到 `.app` 之外的可寫入位置。預設路徑為：
 
-The project supports two directions:
-
-1. A simple `.dmg` for early beta.
-2. A professional `.pkg` installer with Welcome, Read Me, License, and
-   Conclusion pages.
-
-`installer/license.rtf` is a placeholder — replace it with the real EULA before
-release.
-
-## Signing / notarization
-
-Not done yet. Before public release this needs:
-
-- Developer ID **Application** certificate
-- Developer ID **Installer** certificate
-- Hardened Runtime
-- Notarization
-- Stapling
-
-These are intentionally left as TODOs in `electron-builder.config.cjs` and
-`scripts/make-pkg.sh`.
-
-## Storage
-
-The local API stores its data outside the read-only `.app` bundle. Default root
-is **`~/Downloads/AnvilNote`** (override with `ANVILNOTE_DESKTOP_DATA_DIR`):
-
-```
+```text
 ~/Downloads/AnvilNote/
-├── anvilnote.db          # embedded SQLite database
+├── anvilnote.db
 └── storage/
-    ├── typst/            # transient render inputs / .typ
-    └── pdf/              # rendered PDFs
+    ├── typst/
+    └── pdf/
 ```
 
-## Runtime architecture (two sidecars)
-
-The Electron main process starts two local sidecars, both using Electron itself
-as the Node runtime (`ELECTRON_RUN_AS_NODE=1`, no system Node), bound to
-`127.0.0.1` only:
-
-1. **API** — the bundled anvilnote-api (`dist/server.js`), on `apiPort`
-   (default 38317), using the embedded SQLite DB above. It spawns the renderer
-   CLI for each render.
-2. **Web** — the Next.js standalone server (`web/server.js`), on `webPort`
-   (default 38318). Electron loads `http://127.0.0.1:<webPort>`; the preload
-   bridge hands the web app the API base URL at runtime via a renderer launch
-   argument, so the packaged client follows the actual sidecar port instead of a
-   build-time localhost fallback.
-
-## Runtime contract (status)
-
-- ✅ **anvilnote-web** — `output: "standalone"`; runs as a localhost sidecar.
-- ✅ **anvilnote-renderer** — `build:desktop` produces a bundled `dist/cli.js`
-  (no node_modules at runtime); uses `TYPST_BIN` + `ANVILNOTE_FONT_DIR`.
-- ✅ **anvilnote-api** — embedded SQLite via a separate desktop Prisma schema
-  (`prisma/sqlite.prisma`, cloud Postgres untouched); client selected at runtime
-  by a `file:` `DATABASE_URL`; schema created on first boot; binds `127.0.0.1`.
-  ⏳ Remaining (macOS packaging only): stage the API's **production
-  `node_modules`** with Prisma engines for the target macOS arch — pnpm's
-  symlinked store means this must be produced on macOS, e.g.
-  `pnpm --dir ../anvilnote-api deploy --prod <dist/app/api>`.
-
-### anvilnote-api
-
-The shell launches the API as a sidecar using Electron itself as the Node
-runtime (no system Node required):
-
-```
-ELECTRON_RUN_AS_NODE=1 \
-HOST=127.0.0.1 PORT=38317 \
-ANVILNOTE_RENDERER_DIR=<resources>/renderer \
-ANVILNOTE_TYPST_PATH=<resources>/bin/typst/<arch>/typst \
-TYPST_BIN=<same as above> \
-ANVILNOTE_FONT_DIR=<resources>/fonts \
-ANVILNOTE_TEMPLATE_DIR=<resources>/templates \
-<execPath> <resources>/api/dist/server.js
-```
-
-Needed from the API:
-
-- Honor `HOST` / `PORT` and bind to `127.0.0.1` only.
-- A production entry runnable as above. Current entry is `dist/server.js`.
-- Ideally ship a **bundled** production entry (e.g. `dist/desktop.js`) so the
-  sidecar runs **without external `node_modules`** (the API currently uses
-  Prisma and other deps that are not bundled).
-
-### anvilnote-renderer
-
-- Must use the Typst binary from `TYPST_BIN` / `ANVILNOTE_TYPST_PATH` and fonts
-  from `ANVILNOTE_FONT_DIR` — never system-installed Typst or fonts. (It already
-  reads `TYPST_BIN` and `ANVILNOTE_FONT_DIR`.)
-- Ideally provide a bundled production entry so it runs without external
-  `node_modules`.
-
-### anvilnote-web
-
-- It is a Next.js app. For desktop it must produce a **static export**
-  (`output: "export"` → `out/`) that the shell can load from a `file://` URL,
-  or a separately bundled server. `copy-web.mjs` looks for the configured dist
-  or an `out/` directory and fails clearly if neither exists.
-
-## Constraints (by design)
-
-No Docker. No required system Typst / Node.js / Rust. No external network
-service. The local API binds to `127.0.0.1` only. No auto-update, no login /
-cloud sync. macOS only for now. No real notarization yet (TODOs only). Sibling
-source is never copied into this repo — only build artifacts.
+可透過 `ANVILNOTE_DESKTOP_DATA_DIR` 覆寫。
