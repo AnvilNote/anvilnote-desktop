@@ -46,6 +46,36 @@ module.exports = {
     // "gatekeeperAssess": false, entitlements, and notarization before release.
     identity: null,
   },
+  linux: {
+    // Targets are produced one arch at a time by scripts/dist-linux.mjs, which
+    // passes --x64 / --arm64 on the electron-builder CLI; the arch is therefore
+    // intentionally not pinned here.
+    target: ["AppImage", "deb"],
+    category: "Office",
+    // electron-builder rasterizes the Linux icon set from this 1024x1024 png.
+    icon: "build/icon.png",
+    maintainer: "AnvilNote <support@anvilnote.app>",
+    synopsis: "AnvilNote desktop",
+    description:
+      "AnvilNote desktop — local-first note taking with Typst-powered rendering.",
+    executableName: "anvilnote",
+  },
+  deb: {
+    // Runtime libs Electron needs on a clean Debian/Ubuntu; electron-builder
+    // adds its usual Electron set, these cover GUI sandbox / Typst edge cases.
+    depends: [
+      "libgtk-3-0",
+      "libnotify4",
+      "libnss3",
+      "libxss1",
+      "libxtst6",
+      "xdg-utils",
+      "libatspi2.0-0",
+      "libdrm2",
+      "libgbm1",
+      "libasound2",
+    ],
+  },
   dmg: {
     title: "AnvilNote",
   },
