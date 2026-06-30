@@ -112,7 +112,10 @@ async function bootstrap(): Promise<void> {
   } else {
     try {
       const web = await startLocalWeb(webPort, apiBaseUrl);
-      appUrl = web.baseUrl;
+      // Open the workspace directly. The marketing landing lives at the locale
+      // root (/<locale>); the desktop app skips it. next-intl middleware
+      // prefixes the default locale, so /documents -> /<locale>/documents.
+      appUrl = `${web.baseUrl}/documents`;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       log.error(`failed to start web sidecar: ${message}`);
