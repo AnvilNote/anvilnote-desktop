@@ -25,8 +25,14 @@ The current macOS installer assets are not code signed or notarized yet. macOS m
 If macOS blocks the app:
 
 1. Find the downloaded `.app`, `.dmg`, or installed app in Finder.
-2. Right-click the app and choose `Open`.
-3. If it is still blocked, go to `System Settings > Privacy & Security` and allow the app to run.
+2. Right-click the app and choose **Open**.
+3. If it is still blocked, go to **System Settings > Privacy & Security** and allow the app to run.
+
+If macOS shows **"AnvilNote" is damaged and can't be opened**, this is caused by the unsigned app plus the download quarantine flag — the file is not actually corrupted. After moving the app to `/Applications`, run this command in **Terminal** to remove the quarantine flag, then open it normally:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/AnvilNote.app
+```
 
 Before public release, this repository still needs:
 
