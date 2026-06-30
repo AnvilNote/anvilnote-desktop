@@ -1,10 +1,11 @@
 {
   "name": "anvilnote-desktop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Desktop packaging and Electron shell for AnvilNote.",
   "type": "module",
   "main": "dist/main/main.js",
+  "packageManager": "pnpm@11.9.0",
   "scripts": {
     "check": "node --version",
     "test": "pnpm build:main && node --test test/**/*.test.mjs",
@@ -23,7 +24,9 @@
     "pack": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dir --config electron-builder.config.cjs",
     "dist:dmg": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dmg --config electron-builder.config.cjs",
     "dist:pkg": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac pkg --config electron-builder.config.cjs",
-    "dist:mac": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dmg pkg --config electron-builder.config.cjs"
+    "dist:mac": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dmg pkg --config electron-builder.config.cjs",
+    "fetch:typst:linux": "node scripts/fetch-typst-linux.mjs",
+    "dist:linux": "node scripts/dist-linux.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7"

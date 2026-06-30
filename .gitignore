@@ -12,3 +12,6 @@ resources/bin/typst/**/typst.exe
 resources/fonts/**/*.otf
 resources/fonts/**/*.ttf
 resources/fonts/**/*.ttc
+
+# Local pnpm content-addressable store
+.pnpm-store/
