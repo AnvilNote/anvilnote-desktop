@@ -36,6 +36,21 @@ copyInto(path.join(c.apiDir, "package.json"), dest, "package.json");
 const prisma = path.join(c.apiDir, "prisma");
 if (fs.existsSync(prisma)) copyInto(prisma, dest, "prisma");
 
+// Pre-generated static assets (template preview PDFs + thumbnails, brand logo).
+// The API serves these at /static from STATIC_DIR, which defaults to ./static
+// relative to the spawn cwd (the bundled api dir). Without this copy, template
+// previews/thumbnails 404 in the packaged app. Regenerate them beforehand with
+// `pnpm --dir ../anvilnote-api generate:template-previews`.
+const apiStatic = path.join(c.apiDir, "static");
+if (fs.existsSync(apiStatic)) {
+  copyInto(apiStatic, dest, "static");
+} else {
+  console.warn(
+    `\n⚠ No static/ dir at ${apiStatic} — template previews/thumbnails will be ` +
+      `missing. Run \`pnpm --dir ../anvilnote-api generate:template-previews\` first.`,
+  );
+}
+
 // The runtime selector (lib/prisma.js) does require("../generated/sqlite-client")
 // relative to dist/lib, so the generated client must live at dist/generated.
 const generated = path.join(c.apiDir, "src", "generated");
