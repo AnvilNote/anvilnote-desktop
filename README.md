@@ -11,15 +11,12 @@ AnvilNote Desktop 是 AnvilNote 的 macOS 桌面包裝專案。它把 Electron s
 
 ## 下載
 
-- Release 頁面：https://github.com/AnvilNote/anvilnote-desktop/releases
-- 目前版本：[`v0.1.0`](https://github.com/AnvilNote/anvilnote-desktop/releases/tag/v0.1.0)
+可以透過[此連結](https://github.com/AnvilNote/anvilnote-desktop/releases/tag/v0.1.0)下載目前版本。
 
 Release 會提供以下安裝產物：
 
 - `.dmg`：適合大多數使用者直接拖拉安裝
 - `.pkg`：適合需要安裝流程與安裝頁面的使用情境
-
-## 未簽章說明
 
 目前釋出的 macOS 安裝檔尚未完成 code signing 與 notarization。第一次下載或開啟時，macOS 可能會顯示安全警告，這是目前已知且預期中的行為。
 
