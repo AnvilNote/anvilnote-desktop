@@ -54,10 +54,11 @@ module.exports = {
     category: "Office",
     // electron-builder rasterizes the Linux icon set from this 1024x1024 png.
     icon: "build/icon.png",
-    maintainer: "AnvilNote <support@anvilnote.app>",
-    synopsis: "AnvilNote desktop",
+    vendor: "AnvilNote",
+    maintainer: "AnvilNote <sungpinyue@gmail.com>",
+    synopsis: "Offline-first writing and notes app",
     description:
-      "AnvilNote desktop — local-first note taking with Typst-powered rendering.",
+      "AnvilNote is a desktop writing and notes app for long-form notes, lecture handouts, reports, and academic documents. It supports block editing, math formulas, code blocks, images, tables, templates, and PDF export. It works offline-first and does not require login, Node.js, or Typst to be installed separately.",
     executableName: "anvilnote",
   },
   deb: {

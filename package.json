@@ -1,8 +1,13 @@
 {
-  "name": "anvilnote-desktop",
+  "name": "anvilnote",
   "version": "0.1.1",
   "private": true,
-  "description": "Desktop packaging and Electron shell for AnvilNote.",
+  "description": "Offline-first writing and notes app",
+  "author": {
+    "name": "AnvilNote",
+    "email": "sungpinyue@gmail.com"
+  },
+  "homepage": "https://github.com/AnvilNote/anvilnote-desktop",
   "type": "module",
   "main": "dist/main/main.js",
   "packageManager": "pnpm@11.9.0",
