@@ -8,13 +8,17 @@ import fs from "node:fs";
 import path from "node:path";
 import { runtimePaths, repoResources } from "./paths.js";
 
-/** macOS arch folder name; other platforms are not bundled in this skeleton. */
+/** Bundled Typst arch folder name, matching resources/bin/typst/<platform>. */
 function platformDir(): string {
   if (process.platform === "darwin") {
     return process.arch === "arm64" ? "darwin-arm64" : "darwin-x64";
   }
-  // Not a target of this macOS-only skeleton, but keep a predictable shape.
   return `${process.platform}-${process.arch}`;
+}
+
+/** Bundled Typst binary filename; Windows needs the .exe suffix. */
+function binaryName(): string {
+  return process.platform === "win32" ? "typst.exe" : "typst";
 }
 
 /**
@@ -29,6 +33,7 @@ function platformDir(): string {
  */
 export function resolveTypstBinaryPath(): string {
   const plat = platformDir();
+  const bin = binaryName();
 
   if (!app.isPackaged) {
     const override = process.env.ANVILNOTE_TYPST_PATH;
@@ -38,12 +43,12 @@ export function resolveTypstBinaryPath(): string {
       repoResources.bin(),
       "typst",
       plat,
-      "typst",
+      bin,
     );
     if (fs.existsSync(repoCandidate)) return repoCandidate;
   }
 
-  const bundled = path.join(runtimePaths.bin(), "typst", plat, "typst");
+  const bundled = path.join(runtimePaths.bin(), "typst", plat, bin);
   if (fs.existsSync(bundled)) return bundled;
 
   throw new Error(
@@ -52,7 +57,7 @@ export function resolveTypstBinaryPath(): string {
       (app.isPackaged
         ? ". The packaged app must ship Typst; the build is incomplete."
         : `, or set ANVILNOTE_TYPST_PATH, or stage it under ` +
-          `resources/bin/typst/${plat}/typst.`),
+          `resources/bin/typst/${plat}/${bin}.`),
   );
 }
 

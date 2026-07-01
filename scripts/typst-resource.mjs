@@ -9,9 +9,14 @@ function bundledPlatformDir(platform = process.platform, arch = process.arch) {
   return `${platform}-${arch}`;
 }
 
-function isExecutable(file) {
+function bundledBinaryName(platform = process.platform) {
+  return platform === "win32" ? "typst.exe" : "typst";
+}
+
+function isExecutable(file, platform = process.platform) {
   try {
-    fs.accessSync(file, fs.constants.X_OK);
+    // Windows has no X_OK bit; existence is enough.
+    fs.accessSync(file, platform === "win32" ? fs.constants.F_OK : fs.constants.X_OK);
     return true;
   } catch {
     return false;
@@ -25,7 +30,7 @@ export function expectedBundledTypstPath(repoRoot, platform = process.platform, 
     "bin",
     "typst",
     bundledPlatformDir(platform, arch),
-    "typst",
+    bundledBinaryName(platform),
   );
 }
 

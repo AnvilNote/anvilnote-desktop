@@ -47,6 +47,14 @@ module.exports = {
     // "gatekeeperAssess": false, entitlements, and notarization before release.
     identity: null,
   },
+  win: {
+    target: ["nsis"],
+    icon: "build/icon.png",
+  },
+  nsis: {
+    oneClick: false,
+    allowToChangeInstallationDirectory: true,
+  },
   linux: {
     // Targets are produced one arch at a time by scripts/dist-linux.mjs, which
     // passes --x64 / --arm64 on the electron-builder CLI; the arch is therefore

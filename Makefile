@@ -6,7 +6,7 @@
 PM := pnpm
 
 # Treat these targets as commands rather than files on disk.
-.PHONY: help install check-repos dev build prepare pack dist-dmg dist-pkg dist-mac dist-linux dist-linux-x64 dist-linux-arm64 typecheck check test clean reset
+.PHONY: help install check-repos dev build prepare pack dist-dmg dist-pkg dist-mac dist-win dist-linux dist-linux-x64 dist-linux-arm64 typecheck check test clean reset
 
 # Show this help message when make runs without a target.
 .DEFAULT_GOAL := help
@@ -42,6 +42,9 @@ dist-pkg: ## Build a signed mac pkg installer
 
 dist-mac: ## Build both mac dmg and pkg installers
 	$(PM) dist:mac
+
+dist-win: ## Build an unsigned Windows nsis installer exe (x64)
+	$(PM) dist:win
 
 dist-linux: ## Build Linux deb and AppImage for x64 and arm64 in Docker
 	$(PM) dist:linux
