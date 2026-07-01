@@ -151,6 +151,13 @@ ipcMain.on("anvilnote:get-api-base-url", (event) => {
   event.returnValue = currentApiBaseUrl;
 });
 
+// app.getVersion() reads the packaged app's own version (from package.json,
+// baked in by electron-builder) — the reliable source, unlike an env var that
+// nothing actually sets at build time.
+ipcMain.on("anvilnote:get-app-version", (event) => {
+  event.returnValue = app.getVersion();
+});
+
 log.info(
   `AnvilNote Desktop starting (packaged=${isPackaged()}, apiPort=${apiPort}, webPort=${webPort})`,
 );
