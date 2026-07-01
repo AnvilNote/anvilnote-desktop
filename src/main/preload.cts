@@ -14,8 +14,14 @@ const api = {
       return null;
     }
   },
+  getAppVersion(): string | null {
+    try {
+      return ipcRenderer.sendSync("anvilnote:get-app-version") ?? null;
+    } catch {
+      return null;
+    }
+  },
   versions: {
-    app: process.env.ANVILNOTE_APP_VERSION ?? "0.0.0",
     electron: process.versions.electron,
     node: process.versions.node,
     chrome: process.versions.chrome,
