@@ -83,7 +83,7 @@ AnvilNote는 현재 다음 인터페이스 언어를 지원합니다.
 AnvilNote는 앱 번들 외부의 쓰기 가능한 위치에 문서 데이터를 저장합니다. 기본 경로는 다음과 같습니다.
 
 ```
-~/Downloads/AnvilNote/
+~/.anvilnote/
 ├── anvilnote.db
 └── storage/
     ├── typst/

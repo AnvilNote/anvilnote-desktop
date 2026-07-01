@@ -92,7 +92,7 @@ for development.</p></body></html>`;
 async function bootstrap(): Promise<void> {
   registerApiRequestRouting();
 
-  // 1. API sidecar (SQLite under ~/Downloads). Required in production.
+  // 1. API sidecar (SQLite under ~/.anvilnote). Required in production.
   let apiBaseUrl = currentApiBaseUrl;
   const webOrigin = `http://127.0.0.1:${webPort}`;
   try {

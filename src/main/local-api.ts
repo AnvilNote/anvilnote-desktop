@@ -59,7 +59,7 @@ function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
   const fontDir = resolveBundledFontDir();
   const templateDir = resolveBundledTemplateDir();
 
-  // Writable storage + SQLite DB under ~/Downloads/AnvilNote (created up front so
+  // Writable storage + SQLite DB under ~/.anvilnote (created up front so
   // the API never has to mkdir into a missing parent).
   fs.mkdirSync(userData.typstStorage(), { recursive: true });
   fs.mkdirSync(userData.pdfStorage(), { recursive: true });
