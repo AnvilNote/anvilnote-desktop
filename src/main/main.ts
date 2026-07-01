@@ -9,7 +9,7 @@ import { app, BrowserWindow, ipcMain, session } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
-import { repoRoot, runtimePaths, isPackaged } from "./paths.js";
+import { repoRoot, runtimePaths, isPackaged, appIconPath } from "./paths.js";
 import { startLocalApi, stopLocalApi } from "./local-api.js";
 import { startLocalWeb, stopLocalWeb } from "./local-web.js";
 import { createLogger } from "./logger.js";
@@ -47,6 +47,7 @@ function createWindow(): void {
     minWidth: 880,
     minHeight: 600,
     title: "AnvilNote",
+    icon: appIconPath(),
     show: false,
     webPreferences: {
       preload: path.join(moduleDir, "preload.cjs"),

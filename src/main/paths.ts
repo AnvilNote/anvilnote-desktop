@@ -38,6 +38,15 @@ export const runtimePaths = {
   installer: () => path.join(runtimeRoot(), "installer"),
 };
 
+// electron-builder generates the packaged app icon from build/icon.png but does
+// not wire it into BrowserWindow; Linux (and Windows) need it set explicitly or
+// the window shows a generic icon in the taskbar/alt-tab switcher.
+export function appIconPath(): string {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, "icon.png")
+    : path.join(repoRoot, "build", "icon.png");
+}
+
 /** Resources staged directly in the repo (used as a dev fallback). */
 export const repoResources = {
   bin: () => path.join(repoRoot, "resources", "bin"),
