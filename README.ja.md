@@ -1,141 +1,88 @@
 # AnvilNote Desktop
 
-**Languages:** [繁體中文](README.md) | [English](README.en.md) | **日本語** | [한국어](README.ko.md) | [ไทย](README.th.md) | [Русский](README.ru.md)
+**Languages:** [繁體中文](README.zh-TW.md) | [English](README.md) | **日本語** | [한국어](README.ko.md) | [ไทย](README.th.md) | [Русский](README.ru.md)
 
-[![Release](https://img.shields.io/badge/Release-v0.1.0-black?style=for-the-badge)](https://github.com/AnvilNote/anvilnote-desktop/releases/tag/v0.1.0)
+[![Release](https://img.shields.io/github/v/release/AnvilNote/anvilnote-desktop?style=for-the-badge&label=Release&color=black)](https://github.com/AnvilNote/anvilnote-desktop/releases/latest)
 [![Downloads](https://img.shields.io/badge/Downloads-GitHub-black?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
 [![macOS](https://img.shields.io/badge/macOS-Apple-black?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
+[![Linux](https://img.shields.io/badge/Linux-deb%20%7C%20AppImage-black?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
 [![Electron](https://img.shields.io/badge/Electron-Desktop-black?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
 
-AnvilNote Desktop は、Electron shell、AnvilNote Web、AnvilNote API、AnvilNote Renderer、Typst、フォント、テンプレート、インストーラー用リソースをまとめて、macOS 用のダウンロード可能なデスクトップアプリとして配布するためのパッケージングプロジェクトです。
+AnvilNote は、長文のノート、講義資料、レポート、学術文書の整理に適したクロスプラットフォームのライティング&ノートアプリです。
 
-このリポジトリはデスクトップ版の単一の配布入口です。Release、インストール用アセット、バージョンタグ、ダウンロード案内、未署名アプリに関する注意事項はすべてここに集約されます。
+同じワークスペース内でテキストの編集、数式の追加、コードの整理、テンプレートの適用、PDF への書き出しまで完結します。AnvilNote は基本的にオフラインで動作し、ログインは不要で、Node.js や Typst などの別途インストールも必要ありません。
 
 ## ダウンロード
 
-現在のバージョンは[このリンク](https://github.com/AnvilNote/anvilnote-desktop/releases/tag/v0.1.0)からダウンロードできます。
+最新バージョンは[こちらのリンク](https://github.com/AnvilNote/anvilnote-desktop/releases/)から入手できます。
 
-Release では次のアセットを提供する想定です。
+現在提供しているプラットフォームとインストーラー:
 
-- `.dmg`: 一般的なドラッグアンドドロップでのインストール向け
-- `.pkg`: インストーラー形式を使いたい場合向け
+| プラットフォーム | 形式 | 説明 |
+| --- | --- | --- |
+| macOS | `.dmg` | 多くのユーザー向け。ダウンロード後 Applications にドラッグしてインストール |
+| macOS | `.pkg` | 標準的なインストーラー形式を利用したい場合向け |
+| Linux | `.deb` | Debian / Ubuntu 系ディストリビューション向け。パッケージ管理ツールでインストール可能 |
+| Linux | `.AppImage` | インストール不要版。実行権限を付与するだけで直接起動可能 |
 
-現在の macOS インストーラーは code signing と notarization が未完了です。初回起動時に macOS の警告が表示される場合があります。
+> [!WARNING]
+> **macOS のセキュリティに関する注意**
+>
+> 現在配布している macOS 版インストーラーは、Apple のコード署名および公証(notarization)が未完了です。そのため初回起動時にセキュリティ警告が表示される場合がありますが、これは既知の状態であり、ファイルの破損を意味するものではありません。
 
-macOS によりブロックされた場合:
+macOS でアプリの起動がブロックされた場合:
 
-1. Finder でダウンロードした `.app`、`.dmg`、またはインストール済みアプリを見つけます。
-2. アプリを右クリックして**開く**を選びます。
-3. それでもブロックされる場合は、**システム設定 > プライバシーとセキュリティ**で許可してから再実行してください。
+1. Finder でダウンロードした `.app` / `.dmg`、またはインストール済みの AnvilNote を探します。
+2. AnvilNote を右クリックし、「開く」を選択します。
+3. それでもブロックされる場合は、「システム設定 > プライバシーとセキュリティ」で AnvilNote の起動を許可してから、再度実行してください。
 
-macOS に**「AnvilNote」は壊れているため開けません**と表示される場合、これは未署名アプリとダウンロード隔離フラグによるもので、ファイルが実際に壊れているわけではありません。アプリを `/Applications` に移動した後、**ターミナル**で次のコマンドを実行して隔離フラグを削除すると、通常どおり開けます。
+**「AnvilNote」は壊れているため開けません** と表示される場合、これは未署名アプリにダウンロード時の隔離(quarantine)フラグが付与されていることが原因であり、ファイルが実際に破損しているわけではありません。`/Applications` にインストール後、ターミナルで以下のコマンドを実行して隔離フラグを解除してください。
 
-```sh
+```bash
 xattr -dr com.apple.quarantine /Applications/AnvilNote.app
 ```
 
-公開リリース前に、まだ次の作業が必要です。
-
-- Developer ID Application certificate
-- Developer ID Installer certificate
-- Hardened Runtime
-- Notarization
-- Stapling
+> [!NOTE]
+> 正式な一般公開の前に、以下の対応が必要です:
+>
+> - Developer ID Application certificate
+> - Developer ID Installer certificate
+> - Hardened Runtime
+> - Notarization
+> - Stapling
 
 ## 対応言語
 
-同梱される Web アプリの i18n ロケールは次のとおりです。
+AnvilNote は現在、以下のインターフェース言語に対応しています。
 
-| Language | Locale |
+| 言語 | ロケール |
 | --- | --- |
 | English | `en` |
-| Traditional Chinese | `zh-TW` |
-| Japanese | `ja` |
-| Korean | `ko` |
-| Thai | `th` |
-| Russian | `ru` |
+| 繁體中文 | `zh-TW` |
+| 日本語 | `ja` |
+| 한국어 | `ko` |
+| ไทย | `th` |
+| Русский | `ru` |
 
-## リポジトリの役割
+## 主な機能
 
-これは monorepo ではありません。他の AnvilNote アプリの完全なソースコードは含まず、隣接リポジトリの成果物を読み取り、ビルドし、コピーし、パッケージします。
+- 長文ノート・ドキュメントの整理
+- ブロック単位の編集
+- 数式のサポート
+- コードブロックのサポート
+- 画像・表・ドキュメントアウトラインのサポート
+- テンプレートのサポート
+- PDF 出力
+- ログイン不要
+- Typst の別途インストール不要
+- Node.js の別途インストール不要
+- 現時点では外部クラウドサービスに依存しない
 
-想定される sibling repo:
+## データの保存先
 
-```sh
-../anvilnote-web
-../anvilnote-api
-../anvilnote-renderer
+AnvilNote は、アプリ本体の外にある書き込み可能な場所にドキュメントデータを保存します。デフォルトのパスは次のとおりです。
+
 ```
-
-パスは `.env` で上書きできます。
-
-## パッケージ内容
-
-```text
-AnvilNote.app
-├── Electron shell
-├── bundled anvilnote-web
-├── bundled anvilnote-api
-├── bundled anvilnote-renderer
-├── bundled Typst binary
-├── bundled fonts
-├── bundled templates
-└── installer resources
-```
-
-`pnpm prepare:desktop` で `dist/app/` に実行環境を組み立て、その後 `electron-builder` でデスクトップアプリを作成します。
-
-## ローカル開発
-
-```sh
-cp .env.example .env
-pnpm install
-pnpm check:repos
-pnpm dev
-```
-
-開発時:
-
-- `ANVILNOTE_WEB_DEV_URL` が設定されていれば Electron はその URL を開きます。
-- それ以外では同梱された Web ビルドを使用します。
-- API sidecar は開発時に best-effort で起動します。
-
-## パッケージコマンド
-
-```sh
-pnpm pack
-pnpm dist:dmg
-pnpm dist:pkg
-pnpm dist:mac
-```
-
-- `pnpm pack`: ローカル確認用の未圧縮 `.app` を作成
-- `pnpm dist:dmg`: `.dmg` を作成
-- `pnpm dist:pkg`: `.pkg` を作成
-- `pnpm dist:mac`: `.dmg` と `.pkg` の両方を作成
-
-## 実行時の制約
-
-- macOS 専用
-- 別途 Node.js のインストール不要
-- 別途 Typst のインストール不要
-- 外部クラウドサービス不要
-- ローカル API は `127.0.0.1` のみに bind
-- auto-update は未対応
-- login / cloud sync は未対応
-
-## Typst、フォント、テンプレート
-
-- ユーザーは Typst を別途インストールする必要はありません
-- デスクトップアプリは同梱 Typst binary を使用します
-- 開発時は `ANVILNOTE_TYPST_PATH` で Typst を上書きできます
-- フォントとテンプレートは同梱リソースから提供されます
-
-## 保存先
-
-ローカル API は読み取り専用の `.app` バンドル外にデータを書き込みます。既定の場所は次のとおりです。
-
-```text
 ~/Downloads/AnvilNote/
 ├── anvilnote.db
 └── storage/
@@ -143,4 +90,4 @@ pnpm dist:mac
     └── pdf/
 ```
 
-`ANVILNOTE_DESKTOP_DATA_DIR` で上書きできます。
+必要に応じて `ANVILNOTE_DESKTOP_DATA_DIR` でデータの保存先を上書きできます。

@@ -1,141 +1,88 @@
 # AnvilNote Desktop
 
-**Languages:** [繁體中文](README.md) | [English](README.en.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [ไทย](README.th.md) | **Русский**
+**Languages:** [繁體中文](README.zh-TW.md) | [English](README.md) | [日本語](README.ja.md) | [한국어](README.ko.md) | [ไทย](README.th.md) | **Русский**
 
-[![Release](https://img.shields.io/badge/Release-v0.1.0-black?style=for-the-badge)](https://github.com/AnvilNote/anvilnote-desktop/releases/tag/v0.1.0)
+[![Release](https://img.shields.io/github/v/release/AnvilNote/anvilnote-desktop?style=for-the-badge&label=Release&color=black)](https://github.com/AnvilNote/anvilnote-desktop/releases/latest)
 [![Downloads](https://img.shields.io/badge/Downloads-GitHub-black?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
 [![macOS](https://img.shields.io/badge/macOS-Apple-black?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
+[![Linux](https://img.shields.io/badge/Linux-deb%20%7C%20AppImage-black?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
 [![Electron](https://img.shields.io/badge/Electron-Desktop-black?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
 
-AnvilNote Desktop — это проект упаковки настольного приложения для macOS, который объединяет Electron shell, AnvilNote Web, AnvilNote API, AnvilNote Renderer, Typst, шрифты, шаблоны и ресурсы установщика в единый загружаемый пакет.
+AnvilNote — это кроссплатформенное приложение для письма и заметок, подходящее для организации длинных заметок, конспектов лекций, отчётов и научных документов.
 
-Этот репозиторий является единой точкой загрузки настольной версии. Здесь публикуются Release, установочные файлы, теги версий, инструкции по загрузке и примечания о неподписанном приложении.
+Всё происходит в едином рабочем пространстве: редактирование текста, добавление формул, работа с кодом, применение шаблонов и экспорт в PDF. AnvilNote по умолчанию работает офлайн, не требует входа в систему и не требует отдельной установки Node.js, Typst или другого стороннего ПО.
 
 ## Загрузка
 
-Текущую версию можно скачать по [этой ссылке](https://github.com/AnvilNote/anvilnote-desktop/releases/tag/v0.1.0).
+Актуальную версию можно скачать по [этой ссылке](https://github.com/AnvilNote/anvilnote-desktop/releases/).
 
-В Release предполагаются следующие файлы:
+Доступные платформы и установочные файлы:
 
-- `.dmg`: для обычной установки перетаскиванием
-- `.pkg`: для сценариев, где нужен установщик
+| Платформа | Формат | Описание |
+| --- | --- | --- |
+| macOS | `.dmg` | Подходит большинству пользователей — после загрузки перетащите в Applications |
+| macOS | `.pkg` | Подходит, если нужен стандартный процесс установки |
+| Linux | `.deb` | Для Debian / Ubuntu и производных дистрибутивов — устанавливается через пакетный менеджер |
+| Linux | `.AppImage` | Версия без установки — достаточно дать права на выполнение и запустить |
 
-Текущие установочные файлы macOS пока не прошли code signing и notarization. При первом запуске macOS может показать предупреждение безопасности.
+> [!WARNING]
+> **Предупреждение о безопасности для macOS**
+>
+> Текущие сборки для macOS ещё не подписаны и не прошли нотаризацию Apple, поэтому при первом запуске macOS может показать предупреждение системы безопасности. Это ожидаемое и известное состояние, а не признак повреждения файла.
 
-Если macOS блокирует приложение:
+Если macOS блокирует запуск приложения:
 
-1. Найдите загруженный `.app`, `.dmg` или уже установленное приложение в Finder.
-2. Нажмите правой кнопкой и выберите **Open**.
-3. Если блокировка сохраняется, откройте **System Settings > Privacy & Security** и разрешите запуск приложения.
+1. Найдите загруженный `.app`, `.dmg` или установленное приложение AnvilNote в Finder.
+2. Нажмите на AnvilNote правой кнопкой мыши и выберите «Открыть».
+3. Если блокировка сохраняется, перейдите в «Системные настройки > Конфиденциальность и безопасность», разрешите запуск AnvilNote и запустите приложение снова.
 
-Если macOS показывает **«AnvilNote» повреждён и не может быть открыт**, это вызвано неподписанным приложением и флагом карантина при загрузке — файл на самом деле не повреждён. После перемещения приложения в `/Applications` выполните эту команду в **Terminal**, чтобы снять флаг карантина, затем откройте приложение обычным способом:
+Если macOS показывает сообщение **«AnvilNote» повреждено и не может быть открыто**, это обычно связано с флагом карантина (quarantine), который загрузчик ставит на неподписанные приложения, а не с реальным повреждением файла. После установки в `/Applications` выполните в терминале следующую команду, чтобы снять флаг карантина:
 
-```sh
+```bash
 xattr -dr com.apple.quarantine /Applications/AnvilNote.app
 ```
 
-Перед публичным релизом ещё требуются:
-
-- Developer ID Application certificate
-- Developer ID Installer certificate
-- Hardened Runtime
-- Notarization
-- Stapling
+> [!NOTE]
+> Перед публичным релизом ещё предстоит выполнить:
+>
+> - Developer ID Application certificate
+> - Developer ID Installer certificate
+> - Hardened Runtime
+> - Notarization
+> - Stapling
 
 ## Поддерживаемые языки
 
-Встроенное веб-приложение сейчас поддерживает такие i18n locale:
+AnvilNote в настоящее время поддерживает следующие языки интерфейса:
 
-| Language | Locale |
+| Язык | Locale |
 | --- | --- |
 | English | `en` |
-| Traditional Chinese | `zh-TW` |
-| Japanese | `ja` |
-| Korean | `ko` |
-| Thai | `th` |
-| Russian | `ru` |
+| 繁體中文 | `zh-TW` |
+| 日本語 | `ja` |
+| 한국어 | `ko` |
+| ไทย | `th` |
+| Русский | `ru` |
 
-## Роль репозитория
+## Возможности
 
-Это не monorepo. Репозиторий не содержит полный исходный код других приложений AnvilNote, а отвечает за чтение, сборку, копирование и упаковку артефактов из соседних репозиториев.
-
-Ожидаемые sibling repo:
-
-```sh
-../anvilnote-web
-../anvilnote-api
-../anvilnote-renderer
-```
-
-Пути можно переопределить через `.env`.
-
-## Содержимое пакета
-
-```text
-AnvilNote.app
-├── Electron shell
-├── bundled anvilnote-web
-├── bundled anvilnote-api
-├── bundled anvilnote-renderer
-├── bundled Typst binary
-├── bundled fonts
-├── bundled templates
-└── installer resources
-```
-
-`pnpm prepare:desktop` собирает runtime в `dist/app/`, после чего `electron-builder` упаковывает его в настольное приложение.
-
-## Локальная разработка
-
-```sh
-cp .env.example .env
-pnpm install
-pnpm check:repos
-pnpm dev
-```
-
-В режиме разработки:
-
-- если задан `ANVILNOTE_WEB_DEV_URL`, Electron открывает этот URL
-- иначе используется встроенная web-сборка
-- API sidecar запускается в best-effort режиме
-
-## Команды упаковки
-
-```sh
-pnpm pack
-pnpm dist:dmg
-pnpm dist:pkg
-pnpm dist:mac
-```
-
-- `pnpm pack`: собирает распакованный `.app` для локальной проверки
-- `pnpm dist:dmg`: собирает `.dmg`
-- `pnpm dist:pkg`: собирает `.pkg`
-- `pnpm dist:mac`: собирает и `.dmg`, и `.pkg`
-
-## Ограничения окружения
-
-- Только macOS
-- Отдельная установка Node.js не требуется
-- Отдельная установка Typst не требуется
-- Внешние облачные сервисы не требуются
-- Локальный API слушает только `127.0.0.1`
-- Auto-update пока нет
-- Login / cloud sync пока нет
-
-## Typst, шрифты и шаблоны
-
-- Пользователям не нужно отдельно устанавливать Typst
-- Настольное приложение должно использовать встроенный Typst binary
-- В разработке путь можно переопределить через `ANVILNOTE_TYPST_PATH`
-- Шрифты и шаблоны предоставляются из встроенных ресурсных директорий
+- Поддержка длинных заметок и организации документов
+- Блочное редактирование
+- Поддержка математических формул
+- Поддержка блоков кода
+- Поддержка изображений, таблиц и структуры документа
+- Поддержка шаблонов
+- Экспорт в PDF
+- Не требуется вход в систему
+- Не требуется отдельная установка Typst
+- Не требуется отдельная установка Node.js
+- На данный момент не зависит от внешних облачных сервисов
 
 ## Хранение данных
 
-Локальный API пишет данные вне read-only `.app` bundle. Путь по умолчанию:
+AnvilNote записывает данные документов в доступное для записи место за пределами пакета приложения. Путь по умолчанию:
 
-```text
+```
 ~/Downloads/AnvilNote/
 ├── anvilnote.db
 └── storage/
@@ -143,4 +90,4 @@ pnpm dist:mac
     └── pdf/
 ```
 
-Путь можно переопределить через `ANVILNOTE_DESKTOP_DATA_DIR`.
+При необходимости расположение хранилища можно переопределить через `ANVILNOTE_DESKTOP_DATA_DIR`.
