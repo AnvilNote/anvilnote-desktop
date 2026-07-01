@@ -74,7 +74,7 @@ AnvilNote 目前支援以下介面語言：
 AnvilNote 會將文件資料寫入 App 外部的可寫入位置。預設路徑為：
 
 ```
-~/Downloads/AnvilNote/
+~/.anvilnote/
 ├── anvilnote.db
 └── storage/
     ├── typst/

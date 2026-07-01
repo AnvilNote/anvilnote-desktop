@@ -83,7 +83,7 @@ AnvilNote currently supports the following interface languages:
 AnvilNote writes document data to a writable location outside the app bundle. The default path is:
 
 ```
-~/Downloads/AnvilNote/
+~/.anvilnote/
 ├── anvilnote.db
 └── storage/
     ├── typst/

@@ -55,14 +55,16 @@ export const repoResources = {
 };
 
 // ─── User data (writable) ───────────────────────────────────────────────────
-// Default storage lives under ~/Downloads/AnvilNote (overridable). This is
-// where the local API keeps its SQLite database and render artifacts, so the
-// user's notes/PDFs land somewhere visible rather than inside the .app bundle.
+// Default storage lives under ~/.anvilnote (overridable). This is where the
+// local API keeps its SQLite database and render artifacts (PDF/typst render
+// cache). It's app-internal state, not a user-facing export destination —
+// that's handled separately by the Settings folder picker (File System
+// Access API), which writes exported PDFs wherever the user chooses.
 
 export function userDataDir(): string {
   const override = process.env.ANVILNOTE_DESKTOP_DATA_DIR;
   if (override && override.trim()) return override.trim();
-  return path.join(os.homedir(), "Downloads", "AnvilNote");
+  return path.join(os.homedir(), ".anvilnote");
 }
 
 export const userData = {
