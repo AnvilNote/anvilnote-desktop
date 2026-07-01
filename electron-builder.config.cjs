@@ -31,6 +31,7 @@ module.exports = {
     { from: "dist/app/fonts", to: "fonts" },
     { from: "dist/app/templates", to: "templates" },
     { from: "dist/app/installer", to: "installer" },
+    { from: "build/icon.png", to: "icon.png" },
   ],
   mac: {
     category: "public.app-category.productivity",
@@ -62,6 +63,9 @@ module.exports = {
     executableName: "anvilnote",
   },
   deb: {
+    // Refresh the GTK icon cache so the app icon shows up immediately after
+    // install instead of waiting for the next cache refresh.
+    afterInstall: "build/deb-after-install.sh",
     // Runtime libs Electron needs on a clean Debian/Ubuntu; electron-builder
     // adds its usual Electron set, these cover GUI sandbox / Typst edge cases.
     depends: [
