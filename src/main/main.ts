@@ -5,7 +5,7 @@
 //        best-effort so a window still opens while pieces are missing.
 // Prod:  loads the bundled web build and requires the API sidecar.
 
-import { app, BrowserWindow, ipcMain, session } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, session, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
@@ -62,7 +62,53 @@ function createWindow(): void {
     mainWindow = null;
   });
 
+  // window.open()/target="_blank" (e.g. the update-available link) would
+  // otherwise open a bare, unmanaged BrowserWindow. Send it to the OS browser
+  // instead.
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    void shell.openExternal(url);
+    return { action: "deny" };
+  });
+
+  disableWindowZoom(mainWindow);
+
   void loadAppContent(mainWindow);
+}
+
+// Locks out Electron's page zoom: trackpad pinch (setVisualZoomLevelLimits)
+// plus the default menu's Cmd/Ctrl +/-/0 accelerators (rebuilt without the
+// zoom roles below). The editor has its own CSS-driven zoom that never
+// touches webFrame zoom, so it keeps working untouched.
+function disableWindowZoom(win: BrowserWindow): void {
+  win.webContents.setVisualZoomLevelLimits(1, 1);
+}
+
+// Electron's default application menu wires Cmd/Ctrl+Plus/Minus/0 to page
+// zoom via the "zoomIn"/"zoomOut"/"resetZoom" roles. Rebuild the same default
+// View menu without them so the rest of the menu (reload, devtools,
+// fullscreen, standard Edit/Window menus) is untouched.
+function installMenuWithoutZoom(): void {
+  const isMac = process.platform === "darwin";
+  const viewMenu: Electron.MenuItemConstructorOptions = {
+    label: "View",
+    submenu: [
+      { role: "reload" },
+      { role: "forceReload" },
+      { role: "toggleDevTools" },
+      { type: "separator" },
+      { role: "togglefullscreen" },
+    ],
+  };
+  const template: Electron.MenuItemConstructorOptions[] = [
+    ...(isMac
+      ? [{ role: "appMenu" } as Electron.MenuItemConstructorOptions]
+      : []),
+    { role: "fileMenu" },
+    { role: "editMenu" },
+    viewMenu,
+    { role: "windowMenu" },
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 }
 
 async function loadAppContent(win: BrowserWindow): Promise<void> {
@@ -90,6 +136,7 @@ for development.</p></body></html>`;
 }
 
 async function bootstrap(): Promise<void> {
+  installMenuWithoutZoom();
   registerApiRequestRouting();
 
   // 1. API sidecar (SQLite under ~/.anvilnote). Required in production.
