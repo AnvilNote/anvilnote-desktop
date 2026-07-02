@@ -6,7 +6,7 @@
 PM := pnpm
 
 # Treat these targets as commands rather than files on disk.
-.PHONY: help install check-repos dev build prepare pack dist-dmg dist-pkg dist-mac dist-win dist-linux dist-linux-x64 dist-linux-arm64 typecheck check test clean reset release-all check-version check-docker bump-version clean-stage stage-mac stage-win stage-linux gather-release
+.PHONY: help install check-repos dev build prepare pack dist-dmg dist-pkg dist-mac dist-win dist-linux dist-linux-x64 dist-linux-arm64 typecheck check test clean reset release-all
 
 # Show this help message when make runs without a target.
 .DEFAULT_GOAL := help
@@ -71,55 +71,18 @@ clean: ## Remove build output and staged packaging artifacts
 reset: clean ## Remove node_modules in addition to build output
 	rm -rf node_modules
 
-# --- release-all: build every platform's installer in one shot -----------
+# --- release-all: build every platform and publish a GitHub release ------
 # Usage: make release-all VERSION=0.1.6
 #
-# Bumps package.json's version, then builds mac (dmg+pkg), windows (nsis
-# exe), and linux (deb+AppImage, x64+arm64) in sequence, staging each
-# platform's output before the next platform's prepare:desktop step wipes
-# release/ (every dist:* script cleans dist/ and release/ first via
-# scripts/clean.mjs). Does not touch git or GitHub — bump/tag/push/publish
-# stays a manual, deliberate step.
-
-STAGE_DIR := .make-stage
-
-release-all: check-version check-docker bump-version clean-stage stage-mac stage-win stage-linux gather-release ## Bump version and build mac+win+linux installers into release/
-	@echo "==> Done. Artifacts in release/:"
-	@ls -lh release | grep -E '\.(dmg|pkg|exe|deb|AppImage)$$' || true
-
-check-version:
-ifndef VERSION
-	$(error VERSION is required, e.g. make release-all VERSION=0.1.6)
-endif
-
-check-docker:
-	@docker info >/dev/null 2>&1 || (echo "Docker is not running (needed for dist:linux)." && exit 1)
-
-bump-version:
-	@echo "==> Bumping version to $(VERSION)"
-	@node -e "const fs=require('node:fs');const p='package.json';const d=JSON.parse(fs.readFileSync(p));d.version='$(VERSION)';fs.writeFileSync(p,JSON.stringify(d,null,2)+'\n');"
-
-clean-stage:
-	@rm -rf $(STAGE_DIR)
-	@mkdir -p $(STAGE_DIR)
-
-stage-mac:
-	@echo "==> Building macOS (dmg + pkg)"
-	@$(PM) dist:mac
-	@cp release/*.dmg release/*.pkg $(STAGE_DIR)/
-
-stage-win:
-	@echo "==> Building Windows (nsis exe)"
-	@$(PM) dist:win
-	@cp release/*.exe $(STAGE_DIR)/
-
-stage-linux:
-	@echo "==> Building Linux (deb + AppImage, x64 + arm64)"
-	@$(PM) dist:linux
-	@cp release/*.deb release/*.AppImage $(STAGE_DIR)/
-
-gather-release:
-	@rm -rf release
-	@mkdir -p release
-	@cp $(STAGE_DIR)/* release/
-	@rm -rf $(STAGE_DIR)
+# Bumps package.json, commits, tags, pushes, creates the GitHub release, then
+# builds mac (dmg+pkg) -> windows (nsis exe) -> linux (deb+AppImage, x64+
+# arm64) in sequence. Each platform's upload runs in the background so the
+# next platform's build starts immediately instead of waiting on the network
+# transfer. See scripts/release-all.sh for the full script (kept out of the
+# Makefile because it needs a single continuous shell for the background
+# jobs + final `wait` to be reliable across steps).
+#
+# This pushes to origin and publishes a GitHub release — not idempotent by
+# design, so make sure VERSION is right before running it.
+release-all: ## Bump, tag, push, build mac+win+linux, and publish a GitHub release (needs VERSION=x.y.z)
+	@VERSION=$(VERSION) bash scripts/release-all.sh
