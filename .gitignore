@@ -10,6 +10,8 @@ release/
 # committed directly. Keep the directory structure via .gitkeep / README only.
 resources/bin/typst/**/typst
 resources/bin/typst/**/typst.exe
+resources/bin/pandoc/**/pandoc
+resources/bin/pandoc/**/pandoc.exe
 resources/fonts/**/*.otf
 resources/fonts/**/*.ttf
 resources/fonts/**/*.ttc

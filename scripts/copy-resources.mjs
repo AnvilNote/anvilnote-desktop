@@ -12,6 +12,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { config, ensureDir, copyInto, fail, logStep } from "./load-env.mjs";
 import { resolveTypstBuildSource } from "./typst-resource.mjs";
+import { resolvePandocBuildSource } from "./pandoc-resource.mjs";
 
 const c = config();
 logStep("Copying resources -> dist/app");
@@ -72,5 +73,12 @@ ensureDir(path.dirname(destTypst));
 fs.cpSync(typst.source, destTypst);
 fs.chmodSync(destTypst, 0o755);
 console.log(`  staged Typst (${typst.mode}) -> ${destTypst}`);
+
+const pandoc = resolvePandocBuildSource(c.repoRoot);
+const destPandoc = path.join(c.appDir, "bin", "pandoc", path.basename(path.dirname(pandoc.bundled)), "pandoc");
+ensureDir(path.dirname(destPandoc));
+fs.cpSync(pandoc.source, destPandoc);
+fs.chmodSync(destPandoc, 0o755);
+console.log(`  staged Pandoc (${pandoc.mode}) -> ${destPandoc}`);
 
 console.log("resources staged.");
