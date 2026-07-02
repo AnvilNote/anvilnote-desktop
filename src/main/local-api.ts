@@ -81,6 +81,9 @@ function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
     ...(webOrigin ? { CORS_ORIGIN: webOrigin } : {}),
     // The API reads ANVILNOTE_RENDERER_PATH (not _DIR) to locate the renderer.
     ANVILNOTE_RENDERER_PATH: runtimePaths.renderer(),
+    // Same contract for the docx exporter sidecar (Tiptap JSON -> .docx via
+    // Pandoc). See anvilnote-docx-exporter/README.md.
+    ANVILNOTE_DOCX_EXPORTER_PATH: runtimePaths.docxExporter(),
     // The renderer reads TYPST_BIN; also expose ANVILNOTE_TYPST_PATH for parity.
     ANVILNOTE_TYPST_PATH: typstPath,
     TYPST_BIN: typstPath,

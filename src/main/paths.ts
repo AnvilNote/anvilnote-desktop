@@ -32,6 +32,7 @@ export const runtimePaths = {
   web: () => path.join(runtimeRoot(), "web"),
   api: () => path.join(runtimeRoot(), "api"),
   renderer: () => path.join(runtimeRoot(), "renderer"),
+  docxExporter: () => path.join(runtimeRoot(), "docx-exporter"),
   bin: () => path.join(runtimeRoot(), "bin"),
   fonts: () => path.join(runtimeRoot(), "fonts"),
   templates: () => path.join(runtimeRoot(), "templates"),

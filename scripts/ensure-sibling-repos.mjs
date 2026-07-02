@@ -10,6 +10,7 @@ const repos = [
   ["anvilnote-web", c.webDir],
   ["anvilnote-api", c.apiDir],
   ["anvilnote-renderer", c.rendererDir],
+  ["anvilnote-docx-exporter", c.docxExporterDir],
 ];
 
 logStep("Checking sibling repos");
