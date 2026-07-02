@@ -31,9 +31,11 @@
     "dist:pkg": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac pkg --config electron-builder.config.cjs",
     "dist:mac": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dmg pkg --config electron-builder.config.cjs",
     "fetch:typst:linux": "node scripts/fetch-typst-linux.mjs",
+    "fetch:pandoc:linux": "node scripts/fetch-pandoc-linux.mjs",
     "dist:linux": "node scripts/dist-linux.mjs",
     "fetch:typst:windows": "node scripts/fetch-typst-windows.mjs",
-    "dist:win": "pnpm prepare:desktop && pnpm fetch:typst:windows && pnpm build:main && electron-builder --win nsis --x64 --config electron-builder.config.cjs"
+    "fetch:pandoc:windows": "node scripts/fetch-pandoc-windows.mjs",
+    "dist:win": "pnpm prepare:desktop && pnpm fetch:typst:windows && pnpm fetch:pandoc:windows && pnpm build:main && electron-builder --win nsis --x64 --config electron-builder.config.cjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7"

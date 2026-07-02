@@ -19,6 +19,7 @@ import {
   resolveBundledFontDir,
   resolveBundledTemplateDir,
 } from "./typst.js";
+import { resolvePandocBinaryPath } from "./pandoc.js";
 import { createLogger } from "./logger.js";
 import { resolveSidecarExecPath } from "./runtime-config.js";
 
@@ -58,6 +59,7 @@ function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
   const typstPath = resolveTypstBinaryPath();
   const fontDir = resolveBundledFontDir();
   const templateDir = resolveBundledTemplateDir();
+  const pandocPath = resolvePandocBinaryPath();
 
   // Writable storage + SQLite DB under ~/.anvilnote (created up front so
   // the API never has to mkdir into a missing parent).
@@ -84,6 +86,8 @@ function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
     // Same contract for the docx exporter sidecar (Tiptap JSON -> .docx via
     // Pandoc). See anvilnote-docx-exporter/README.md.
     ANVILNOTE_DOCX_EXPORTER_PATH: runtimePaths.docxExporter(),
+    // The docx exporter reads PANDOC_BIN.
+    PANDOC_BIN: pandocPath,
     // The renderer reads TYPST_BIN; also expose ANVILNOTE_TYPST_PATH for parity.
     ANVILNOTE_TYPST_PATH: typstPath,
     TYPST_BIN: typstPath,

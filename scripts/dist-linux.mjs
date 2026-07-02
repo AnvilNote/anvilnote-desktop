@@ -11,6 +11,7 @@
 //   2. per arch, in a matching-platform container:
 //        pnpm install (linux-native deps, isolated from the host node_modules)
 //        fetch-typst-linux  (stages the Linux Typst into dist/app/bin)
+//        fetch-pandoc-linux (stages the Linux Pandoc into dist/app/bin)
 //        build:main         (tsc)
 //        electron-builder --linux AppImage deb --<arch>
 //
@@ -53,6 +54,7 @@ const inContainer = [
   "corepack enable",
   "pnpm install --frozen-lockfile --prod=false",
   "node scripts/fetch-typst-linux.mjs",
+  "node scripts/fetch-pandoc-linux.mjs",
   "pnpm build:main",
   `npx electron-builder --linux ${TARGETS} --__ARCH__ -c electron-builder.config.cjs`,
 ].join(" && ");
