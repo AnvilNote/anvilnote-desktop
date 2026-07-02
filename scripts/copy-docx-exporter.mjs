@@ -30,6 +30,6 @@ if (!fs.existsSync(assets)) {
 copyInto(assets, dest, "assets");
 
 console.log(
-  "\ndocx-exporter staged. dist/cli.js is the esbuild bundle, so no node_modules " +
+  "\ndocx-exporter staged. dist/cli.cjs is the esbuild bundle, so no node_modules " +
     "are needed at runtime; assets/ (callout.lua + reference.docx) is copied alongside.",
 );
