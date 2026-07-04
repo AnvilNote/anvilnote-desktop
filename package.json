@@ -2,6 +2,7 @@
   "name": "anvilnote",
   "version": "0.1.10",
   "private": true,
+  "license": "MIT",
   "description": "Offline-first writing and notes app",
   "author": {
     "name": "AnvilNote",
