@@ -18,6 +18,19 @@ import { rewriteDevApiUrl } from "./request-routing.js";
 const log = createLogger("main");
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
+// AppImage has no install step, so nothing can chown/chmod chrome-sandbox to
+// root:4755 the way the .deb's postinst script does (see
+// build/deb-after-install.sh) — running it as a regular user aborts with
+// "SUID sandbox helper binary was found, but is not configured correctly."
+// The AppImage runtime always sets APPIMAGE to the mounted image's path
+// (https://docs.appimage.org/packaging-guide/environment-variables.html),
+// which is a reliable way to detect this specific packaging without
+// weakening the sandbox on platforms/formats where it works normally. Must
+// run before app.whenReady() / any window creation for the switch to apply.
+if (process.env.APPIMAGE) {
+  app.commandLine.appendSwitch("no-sandbox");
+}
+
 // In dev, read .env from the repo root. Packaged builds rely on baked-in config.
 if (!app.isPackaged) {
   dotenv.config({ path: path.join(repoRoot, ".env") });

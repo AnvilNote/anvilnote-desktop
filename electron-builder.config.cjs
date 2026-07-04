@@ -62,8 +62,18 @@ module.exports = {
     // intentionally not pinned here.
     target: ["AppImage", "deb"],
     category: "Office",
-    // electron-builder rasterizes the Linux icon set from this 1024x1024 png.
-    icon: "build/icon.png",
+    // A directory of pre-sized PNGs, NOT the single 1024x1024 build/icon.png
+    // used for mac/win — electron-builder's underlying app-builder binary's
+    // `icon --format set` (used for the Linux hicolor icon set) does not
+    // rasterize a single input into multiple sizes the way the mac .icns /
+    // win .ico generators do; given one file it just uses that file as
+    // its one and only size. Verified directly: running app-builder against
+    // build/icon.png alone produced a single 1024x1024 entry, which is why
+    // installed .deb builds prior to this had no visible icon in most
+    // launchers (hicolor lookups for standard sizes like 48/128/256 found
+    // nothing). build/icons/ is checked-in pre-rendered output (via `sips`)
+    // at the standard hicolor sizes; regenerate it if build/icon.png changes.
+    icon: "build/icons",
     vendor: "AnvilNote",
     maintainer: "AnvilNote <sungpinyue@gmail.com>",
     synopsis: "Offline-first writing and notes app",
