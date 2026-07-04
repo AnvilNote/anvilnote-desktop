@@ -21,6 +21,20 @@ const api = {
       return null;
     }
   },
+  // Native folder picker + writer for "export to a folder", bypassing the
+  // browser's File System Access API — Chromium refuses to let that API pick
+  // Downloads/Desktop/Documents/the home dir, but Electron's own dialog has no
+  // such blocklist.
+  pickExportDir(): Promise<string | null> {
+    return ipcRenderer.invoke("anvilnote:pick-export-dir");
+  },
+  writeExportFile(
+    dirPath: string,
+    segments: string[],
+    data: Uint8Array,
+  ): Promise<string> {
+    return ipcRenderer.invoke("anvilnote:write-export-file", dirPath, segments, data);
+  },
   versions: {
     electron: process.versions.electron,
     node: process.versions.node,
