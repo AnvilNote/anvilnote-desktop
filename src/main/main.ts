@@ -14,6 +14,7 @@ import { startLocalApi, stopLocalApi } from "./local-api.js";
 import { startLocalWeb, stopLocalWeb } from "./local-web.js";
 import { createLogger } from "./logger.js";
 import { rewriteDevApiUrl } from "./request-routing.js";
+import { registerExportDialogHandlers } from "./export-dialog.js";
 
 const log = createLogger("main");
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -210,6 +211,8 @@ process.on("exit", stopSidecars);
 ipcMain.on("anvilnote:get-api-base-url", (event) => {
   event.returnValue = currentApiBaseUrl;
 });
+
+registerExportDialogHandlers(() => mainWindow);
 
 // app.getVersion() reads the packaged app's own version (from package.json,
 // baked in by electron-builder) — the reliable source, unlike an env var that
