@@ -18,6 +18,7 @@ import {
   resolveTypstBinaryPath,
   resolveBundledFontDir,
   resolveBundledTemplateDir,
+  resolveBundledTypstPackageCacheDir,
 } from "./typst.js";
 import { resolvePandocBinaryPath } from "./pandoc.js";
 import { createLogger } from "./logger.js";
@@ -59,6 +60,7 @@ function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
   const typstPath = resolveTypstBinaryPath();
   const fontDir = resolveBundledFontDir();
   const templateDir = resolveBundledTemplateDir();
+  const typstPackageCacheDir = resolveBundledTypstPackageCacheDir();
   const pandocPath = resolvePandocBinaryPath();
 
   // Writable storage + SQLite DB under ~/.anvilnote (created up front so
@@ -93,6 +95,10 @@ function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
     TYPST_BIN: typstPath,
     ANVILNOTE_FONT_DIR: fontDir,
     ANVILNOTE_TEMPLATE_DIR: templateDir,
+    // Typst's own env var (read directly by the `typst` binary compile-typst.ts
+    // spawns) — makes @preview/* package imports (e.g. merman for Mermaid)
+    // resolve from this pre-fetched cache instead of hitting the network.
+    TYPST_PACKAGE_CACHE_PATH: typstPackageCacheDir,
   };
 }
 

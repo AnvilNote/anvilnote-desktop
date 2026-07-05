@@ -58,7 +58,11 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 860,
-    minWidth: 880,
+    // macOS Split View requires a window's minWidth to fit half a typical
+    // display (~640pt logical on a 13" Retina screen) — 880 was wide
+    // enough that macOS refused to place the window into Split View at
+    // all ("無法使用於此分割顯示"), not just laid it out awkwardly.
+    minWidth: 600,
     minHeight: 600,
     title: "AnvilNote",
     icon: appIconPath(),

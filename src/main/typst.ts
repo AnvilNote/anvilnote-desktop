@@ -82,3 +82,13 @@ export function resolveBundledTemplateDir(): string {
   }
   return runtimePaths.templates();
 }
+
+/** Pre-fetched Typst package cache handed to Typst via TYPST_PACKAGE_CACHE_PATH
+ *  (Typst's own env var, read directly by the `typst` binary — not something
+ *  the renderer re-interprets), so @preview/* imports resolve offline. */
+export function resolveBundledTypstPackageCacheDir(): string {
+  if (!app.isPackaged && fs.existsSync(repoResources.typstPackages())) {
+    return repoResources.typstPackages();
+  }
+  return runtimePaths.typstPackages();
+}
