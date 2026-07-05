@@ -37,6 +37,12 @@ export const runtimePaths = {
   fonts: () => path.join(runtimeRoot(), "fonts"),
   templates: () => path.join(runtimeRoot(), "templates"),
   installer: () => path.join(runtimeRoot(), "installer"),
+  // Pre-fetched Typst package cache (e.g. @preview/merman for Mermaid
+  // rendering) laid out exactly as Typst's own --package-cache-path expects
+  // (preview/<name>/<version>/...), so pointing TYPST_PACKAGE_CACHE_PATH
+  // here makes Typst treat these as already-downloaded — no network access
+  // needed at render time. See typst.ts's resolveBundledTypstPackageCacheDir.
+  typstPackages: () => path.join(runtimeRoot(), "typst-packages"),
 };
 
 // electron-builder generates the packaged app icon from build/icon.png but does
@@ -53,6 +59,7 @@ export const repoResources = {
   bin: () => path.join(repoRoot, "resources", "bin"),
   fonts: () => path.join(repoRoot, "resources", "fonts"),
   templates: () => path.join(repoRoot, "resources", "templates"),
+  typstPackages: () => path.join(repoRoot, "resources", "typst-packages"),
 };
 
 // ─── User data (writable) ───────────────────────────────────────────────────
