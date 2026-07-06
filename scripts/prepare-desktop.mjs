@@ -14,10 +14,12 @@ const steps = [
   "build-api.mjs",
   "build-renderer.mjs",
   "build-docx-exporter.mjs",
+  "build-charts.mjs",
   "copy-web.mjs",
   "copy-api.mjs",
   "copy-renderer.mjs",
   "copy-docx-exporter.mjs",
+  "copy-charts.mjs",
   "copy-resources.mjs",
 ];
 
