@@ -88,6 +88,10 @@ function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
     // Same contract for the docx exporter sidecar (Tiptap JSON -> .docx via
     // Pandoc). See anvilnote-docx-exporter/README.md.
     ANVILNOTE_DOCX_EXPORTER_PATH: runtimePaths.docxExporter(),
+    // Same contract for the function-plot chart compiler. Reuses the same
+    // bundled typst binary + TYPST_PACKAGE_CACHE_PATH set below — no
+    // charts-specific binary wiring needed.
+    ANVILNOTE_CHARTS_PATH: runtimePaths.charts(),
     // The docx exporter reads PANDOC_BIN.
     PANDOC_BIN: pandocPath,
     // The renderer reads TYPST_BIN; also expose ANVILNOTE_TYPST_PATH for parity.
