@@ -58,10 +58,12 @@ export function config() {
     apiDir: resolveDir(e.ANVILNOTE_API_DIR ?? "../anvilnote-api"),
     rendererDir: resolveDir(e.ANVILNOTE_RENDERER_DIR ?? "../anvilnote-renderer"),
     docxExporterDir: resolveDir(e.ANVILNOTE_DOCX_EXPORTER_DIR ?? "../anvilnote-docx-exporter"),
+    chartsDir: resolveDir(e.ANVILNOTE_CHARTS_DIR ?? "../anvilnote-charts"),
     webDist: e.ANVILNOTE_WEB_DIST ?? "dist",
     apiDist: e.ANVILNOTE_API_DIST ?? "dist",
     rendererDist: e.ANVILNOTE_RENDERER_DIST ?? "dist",
     docxExporterDist: e.ANVILNOTE_DOCX_EXPORTER_DIST ?? "dist",
+    chartsDist: e.ANVILNOTE_CHARTS_DIST ?? "dist",
     port: Number(e.ANVILNOTE_DESKTOP_PORT ?? 38317),
     webDevUrl: e.ANVILNOTE_WEB_DEV_URL ?? "",
     // Assembled runtime tree that electron-builder lifts into Resources.

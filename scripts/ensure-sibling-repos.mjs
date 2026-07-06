@@ -11,6 +11,7 @@ const repos = [
   ["anvilnote-api", c.apiDir],
   ["anvilnote-renderer", c.rendererDir],
   ["anvilnote-docx-exporter", c.docxExporterDir],
+  ["anvilnote-charts", c.chartsDir],
 ];
 
 logStep("Checking sibling repos");
