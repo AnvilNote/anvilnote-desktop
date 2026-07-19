@@ -6,7 +6,7 @@
 PM := pnpm
 
 # Treat these targets as commands rather than files on disk.
-.PHONY: help install check-repos dev build prepare pack dist-dmg dist-pkg dist-mac dist-win dist-linux dist-linux-x64 dist-linux-arm64 typecheck check test clean reset release-all
+.PHONY: help install check-repos dev dev-hot build prepare pack dist-dmg dist-pkg dist-mac dist-win dist-linux dist-linux-x64 dist-linux-arm64 typecheck check test clean reset release-all
 
 # Show this help message when make runs without a target.
 .DEFAULT_GOAL := help
@@ -22,8 +22,11 @@ install: ## Install all project dependencies from the lockfile
 check-repos: ## Verify the sibling AnvilNote repos are present
 	$(PM) check:repos
 
-dev: ## Compile the main process and launch the Electron shell
+dev: ## Prepare the local runtime and launch the persistent Electron desktop shell
 	$(PM) dev
+
+dev-hot: ## Launch Next hot reload inside Desktop with encrypted Smart Mode storage
+	$(PM) dev:hot
 
 build: ## Compile the TypeScript main process into dist
 	$(PM) build:main

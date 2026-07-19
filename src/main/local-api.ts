@@ -56,7 +56,11 @@ function resolveApiEntry(): string {
 }
 
 /** Resolve once so failures surface as clear errors before spawning. */
-function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
+function buildChildEnv(
+  port: number,
+  webOrigin: string | undefined,
+  desktopTrustToken: string,
+): NodeJS.ProcessEnv {
   const typstPath = resolveTypstBinaryPath();
   const fontDir = resolveBundledFontDir();
   const templateDir = resolveBundledTemplateDir();
@@ -74,6 +78,9 @@ function buildChildEnv(port: number, webOrigin?: string): NodeJS.ProcessEnv {
     NODE_ENV: "production",
     HOST,
     PORT: String(port),
+    ANVILNOTE_RUNTIME: "desktop",
+    ANVILNOTE_DESKTOP_TRUST_TOKEN: desktopTrustToken,
+    ANVILNOTE_BROWSER_SESSION_BYOK: "false",
     // Embedded SQLite database (desktop). The API's Prisma datasource reads
     // DATABASE_URL; a file: URL keeps everything local, no server required.
     DATABASE_URL: `file:${userData.databaseFile()}`,
@@ -132,11 +139,15 @@ function waitForPort(port: number, timeoutMs: number): Promise<void> {
 export async function startLocalApi(
   port: number,
   webOrigin?: string,
+  desktopTrustToken?: string,
 ): Promise<LocalApi> {
   if (current) return current;
 
   const entry = resolveApiEntry();
-  const env = buildChildEnv(port, webOrigin);
+  if (!desktopTrustToken || desktopTrustToken.length < 32) {
+    throw new Error("Desktop API trust token is unavailable.");
+  }
+  const env = buildChildEnv(port, webOrigin, desktopTrustToken);
 
   log.info(`starting API sidecar: ${entry} on ${HOST}:${port}`);
   const child = spawn(SIDECAR_EXEC_PATH, [entry], {

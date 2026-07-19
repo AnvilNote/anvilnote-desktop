@@ -9,6 +9,7 @@ const c = config();
 const repos = [
   ["anvilnote-web", c.webDir],
   ["anvilnote-api", c.apiDir],
+  ["anvilnote-ai-writer", c.aiWriterDir],
   ["anvilnote-renderer", c.rendererDir],
   ["anvilnote-docx-exporter", c.docxExporterDir],
   ["anvilnote-charts", c.chartsDir],

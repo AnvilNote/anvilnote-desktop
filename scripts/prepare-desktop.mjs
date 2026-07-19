@@ -10,11 +10,13 @@ const scriptsDir = path.dirname(fileURLToPath(import.meta.url));
 const steps = [
   "clean.mjs",
   "ensure-sibling-repos.mjs",
+  "build-ai-writer.mjs",
   "build-web.mjs",
   "build-api.mjs",
   "build-renderer.mjs",
   "build-docx-exporter.mjs",
   "build-charts.mjs",
+  "copy-ai-writer.mjs",
   "copy-web.mjs",
   "copy-api.mjs",
   "copy-renderer.mjs",

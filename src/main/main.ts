@@ -5,7 +5,7 @@
 //        best-effort so a window still opens while pieces are missing.
 // Prod:  loads the bundled web build and requires the API sidecar.
 
-import { app, BrowserWindow, ipcMain, Menu, session, shell } from "electron";
+import { app, BrowserWindow, ipcMain, Menu, safeStorage, session, shell } from "electron";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
@@ -15,6 +15,10 @@ import { startLocalWeb, stopLocalWeb } from "./local-web.js";
 import { createLogger } from "./logger.js";
 import { rewriteDevApiUrl } from "./request-routing.js";
 import { registerExportDialogHandlers } from "./export-dialog.js";
+import { AISecretStoreImpl } from "./ai/ai-secret-store.js";
+import { registerAIIPCHandlers } from "./ai/ai-ipc.js";
+import { createDesktopTrustToken, TrustedAIClient } from "./ai/trusted-ai-client.js";
+import { AIAttachmentStore } from "./ai/ai-attachment-store.js";
 
 const log = createLogger("main");
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -45,6 +49,29 @@ const webPort = Number(process.env.ANVILNOTE_WEB_PORT ?? DEFAULT_WEB_PORT);
 let mainWindow: BrowserWindow | null = null;
 let appUrl: string | null = null;
 let currentApiBaseUrl = `http://127.0.0.1:${apiPort}`;
+const desktopTrustToken = createDesktopTrustToken();
+let aiHandlersRegistered = false;
+
+function registerAIHandlers(): void {
+  if (aiHandlersRegistered) return;
+  const secretStore = new AISecretStoreImpl({
+    platform: process.platform,
+    safeStorage,
+    getApiBaseUrl: () => currentApiBaseUrl,
+    trustToken: desktopTrustToken,
+  });
+  const client = new TrustedAIClient({
+    getApiBaseUrl: () => currentApiBaseUrl,
+    trustToken: desktopTrustToken,
+    secretStore,
+  });
+  const attachmentStore = new AIAttachmentStore({
+    rootDir: path.join(app.getPath("userData"), "ai-attachments"),
+    safeStorage,
+  });
+  registerAIIPCHandlers({ ipcMain, secretStore, client, attachmentStore });
+  aiHandlersRegistered = true;
+}
 
 // Must run after app is ready; session.defaultSession throws otherwise.
 function registerApiRequestRouting(): void {
@@ -156,12 +183,13 @@ for development.</p></body></html>`;
 async function bootstrap(): Promise<void> {
   installMenuWithoutZoom();
   registerApiRequestRouting();
+  registerAIHandlers();
 
   // 1. API sidecar (SQLite under ~/.anvilnote). Required in production.
   let apiBaseUrl = currentApiBaseUrl;
   const webOrigin = `http://127.0.0.1:${webPort}`;
   try {
-    const api = await startLocalApi(apiPort, webOrigin);
+    const api = await startLocalApi(apiPort, webOrigin, desktopTrustToken);
     apiBaseUrl = api.baseUrl;
     process.env.ANVILNOTE_API_BASE_URL = api.baseUrl;
   } catch (err) {

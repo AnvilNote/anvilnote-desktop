@@ -5,84 +5,123 @@
 [![Release](https://img.shields.io/github/v/release/AnvilNote/anvilnote-desktop?style=for-the-badge&label=Release&color=black)](https://github.com/AnvilNote/anvilnote-desktop/releases/latest)
 [![Downloads](https://img.shields.io/badge/Downloads-GitHub-black?style=for-the-badge&logo=github&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
 [![macOS](https://img.shields.io/badge/macOS-Apple-black?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
+[![Windows](https://img.shields.io/badge/Windows-x64-black?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
 [![Linux](https://img.shields.io/badge/Linux-deb%20%7C%20AppImage-black?style=for-the-badge&logo=linux&logoColor=white)](https://github.com/AnvilNote/anvilnote-desktop/releases)
-[![Electron](https://img.shields.io/badge/Electron-Desktop-black?style=for-the-badge&logo=electron&logoColor=white)](https://www.electronjs.org/)
 
-AnvilNote is a cross-platform writing and note-taking app built for long-form notes, lecture materials, reports, and academic documents.
+AnvilNote Desktop packages the AnvilNote editor, API, PDF renderer, DOCX exporter, and supporting services as one Electron application. It is intended for long-form notes, lecture materials, reports, and technical or academic documents.
 
-Everything happens in a single workspace: write, add formulas, organize code, apply templates, and export to PDF. AnvilNote runs offline by default, requires no login, and needs no separate install of Node.js, Typst, or any other tooling.
+Core editing and document export work offline, and local desktop use requires no account. Smart Mode is optional and requires an internet connection and the user's own OpenAI API key.
 
 ## Download
 
-Grab the latest version from [this link](https://github.com/AnvilNote/anvilnote-desktop/releases/).
+Download the latest public preview from [GitHub Releases](https://github.com/AnvilNote/anvilnote-desktop/releases/latest).
 
-Available platforms and installers:
-
-| Platform | Format | Notes |
+| Platform | Current artifacts | Architecture |
 | --- | --- | --- |
-| macOS | `.dmg` | Best for most users — drag into Applications to install |
-| macOS | `.pkg` | For a standard guided install flow |
-| Linux | `.deb` | For Debian / Ubuntu and derivatives — install via your package manager |
-| Linux | `.AppImage` | No install required — mark it executable and run it directly |
+| macOS | `.dmg`, `.pkg` | Apple silicon |
+| Windows | NSIS `.exe` | x64 |
+| Linux | `.deb`, `.AppImage` | x64, arm64 |
 
-> [!WARNING]
-> **macOS security notice**
->
-> The current macOS builds are not yet code signed or notarized by Apple, so macOS may show a security warning on first launch. This is a known, expected state and does not indicate a corrupted file.
+The current macOS builds are not code signed or notarized by Apple. macOS may therefore display a warning on first launch. If the app is blocked, right-click AnvilNote and choose **Open**, or allow it under **System Settings > Privacy & Security**.
 
-If macOS blocks the app from opening:
-
-1. Locate the downloaded `.app`, `.dmg`, or the installed AnvilNote app in Finder.
-2. Right-click AnvilNote and choose **Open**.
-3. If it is still blocked, go to **System Settings > Privacy & Security**, allow AnvilNote, then launch it again.
-
-If macOS shows **"AnvilNote" is damaged and can't be opened**, this is typically caused by the download quarantine flag on an unsigned app, not actual file corruption. After installing to `/Applications`, remove the quarantine flag from the terminal:
+If macOS reports that the installed app is damaged, the unsigned build may still have a download quarantine flag. After confirming that the file came from the official release page, remove the flag with:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/AnvilNote.app
 ```
 
-> [!NOTE]
-> The following are still required before a public release:
->
-> - Developer ID Application certificate
-> - Developer ID Installer certificate
-> - Hardened Runtime
-> - Notarization
-> - Stapling
-
-## Supported Languages
-
-AnvilNote currently supports the following interface languages:
-
-| Language | Locale |
-| --- | --- |
-| English | `en` |
-| Traditional Chinese | `zh-TW` |
-| Japanese | `ja` |
-| Korean | `ko` |
-| Thai | `th` |
-| Russian | `ru` |
-
 ## Features
 
-- Long-form notes and document organization
-- Block-based editing
-- Math formulas
-- Code blocks
-- Images, tables, and document outline
-- Templates
-- PDF export
-- No login required
-- No separate Typst install required
-- No separate Node.js install required
-- No dependency on external cloud services at this time
+- Tiptap visual editor for long-form documents
+- Headings, lists, tables, images, math, code blocks, callouts, proofs, and questions
+- Reusable document templates and localized interfaces
+- PDF export through the bundled Typst renderer
+- DOCX export with native Word equations where supported
+- Optional Smart Mode for structured composition, attachment context, and selected-text rewriting
+- No account required for local desktop use
+- Bundled runtime tools in packaged releases; end users do not install Node.js, Typst, or Pandoc
 
-## Data Storage
+## Smart Mode
 
-AnvilNote writes document data to a writable location outside the app bundle. The default path is:
+Smart Mode provides document-scoped conversations. A response is returned as a validated document draft before the user decides whether to insert it at the cursor or replace the current document. Selected text can be rewritten through an inline review flow with accept and reject controls. Requests can be cancelled, and accepted editor changes participate in the normal editor undo history.
 
+Smart Mode can use extracted text from supported attachments as context. It does not provide OCR, and it does not silently replace a document. OpenAI API usage is billed to the user's OpenAI account and is separate from a ChatGPT subscription.
+
+### Credential storage
+
+OpenAI credentials cross a trusted Desktop boundary rather than browser `localStorage`:
+
+- Electron main encrypts named key profiles with the operating system-backed `safeStorage` backend.
+- The API database stores ciphertext and non-secret display metadata; it cannot decrypt a saved key.
+- Electron main is the only component that decrypts a key and supplies it for an authorized request.
+- The renderer process receives only a masked label such as `OpenAI · sk-proj-****5YA`, never the raw saved key or ciphertext.
+- The loopback API binds to `127.0.0.1` and requires a per-launch Desktop trust token for privileged credential operations.
+- On Linux systems where Electron reports the insecure `basic_text` backend, saved keys remain session-only instead of being presented as securely persistent.
+
+Running `anvilnote-web` directly in a browser is also session-only because the browser does not have access to the Desktop trust boundary.
+
+### Attachment storage
+
+Desktop attachment blobs are stored without MinIO or another bundled object service. Electron main encrypts each content-addressed blob with AES-256-GCM using an installation key protected by `safeStorage`. Renderer IPC exposes only safe metadata and an opaque attachment ID.
+
+## Testing Smart Mode
+
+1. Open AnvilNote Desktop and go to **Settings**.
+2. Open the AI settings and select OpenAI.
+3. Add your own API key and use the connection-test button.
+4. Open or create a document, then open Smart Mode from the Bot button.
+5. Ask it to generate a short structured document.
+6. Review the returned draft before inserting it or replacing the current document.
+7. Apply the draft, then use the editor's normal undo action.
+8. Select text in the editor and request a rewrite.
+9. Accept or reject the inline revision.
+
+No shared credential is provided. These steps may create chargeable OpenAI API requests.
+
+## Build from source
+
+Place the repositories side by side because the Desktop build assembles the Web app and trusted services from sibling repositories:
+
+```text
+parent-folder/
+  anvilnote-ai-writer/
+  anvilnote-api/
+  anvilnote-web/
+  anvilnote-desktop/
+  anvilnote-renderer/
+  anvilnote-docx-exporter/
+  anvilnote-charts/
 ```
+
+Install dependencies in the sibling repositories, then run from `anvilnote-desktop`:
+
+```bash
+pnpm install
+pnpm check:repos
+pnpm dev:hot
+```
+
+`pnpm dev:hot` builds the trusted sidecars and runs the sibling Next.js development server inside Electron. Stop any separately running `anvilnote-web` development server first. Use `pnpm dev` when you want a fully staged Web build without hot reload.
+
+Useful commands:
+
+```bash
+pnpm build:main
+pnpm test
+pnpm prepare:desktop
+pnpm pack
+pnpm dist:mac
+pnpm dist:win
+pnpm dist:linux
+```
+
+Release builds bundle the required Typst and Pandoc executables. Source-development workflows may use the sibling repositories' documented tool setup.
+
+## Data storage
+
+The application stores writable data outside the app bundle. The default location is:
+
+```text
 ~/.anvilnote/
 ├── anvilnote.db
 └── storage/
@@ -90,4 +129,19 @@ AnvilNote writes document data to a writable location outside the app bundle. Th
     └── pdf/
 ```
 
-This location can be overridden via `ANVILNOTE_DESKTOP_DATA_DIR`.
+Set `ANVILNOTE_DESKTOP_DATA_DIR` to use a different development data directory.
+The encrypted Smart Mode attachment vault is kept separately under Electron's
+platform-specific user-data directory in `ai-attachments/`.
+
+## Related repositories
+
+- [AnvilNote](https://github.com/AnvilNote/anvilnote)
+- [AnvilNote Web](https://github.com/AnvilNote/anvilnote-web)
+- [AnvilNote API](https://github.com/AnvilNote/anvilnote-api)
+- [AnvilNote AI Writer](https://github.com/AnvilNote/anvilnote-ai-writer)
+- [AnvilNote Renderer](https://github.com/AnvilNote/anvilnote-renderer)
+- [AnvilNote DOCX Exporter](https://github.com/AnvilNote/anvilnote-docx-exporter)
+
+## License
+
+This repository is licensed under the [MIT License](LICENSE).
