@@ -16,13 +16,25 @@ const ALLOWED_PATHS = new Set([
   "/api/ai/rewrite-selection",
 ]);
 const CANCEL_PATH = /^\/api\/ai\/requests\/[A-Za-z0-9._:-]{1,128}\/cancel$/u;
+const CONVERSATION_BASE_PATH = /^\/api\/documents\/([A-Za-z0-9._:-]{1,128})\/ai-conversations$/u;
+const CONVERSATION_TURN_PATH = /^\/api\/documents\/[A-Za-z0-9._:-]{1,128}\/ai-conversations\/turns$/u;
+const CONVERSATION_MESSAGE_PATH = /^\/api\/documents\/[A-Za-z0-9._:-]{1,128}\/ai-conversations\/[A-Za-z0-9._:-]{1,128}\/messages$/u;
+const CONVERSATION_PROFILE_PATH = /^\/api\/documents\/[A-Za-z0-9._:-]{1,128}\/ai-conversations\/[A-Za-z0-9._:-]{1,128}$/u;
 
 export function createDesktopTrustToken(): string {
   return randomBytes(32).toString("hex");
 }
 
 export function isAllowedAIPath(pathname: string): boolean {
-  return ALLOWED_PATHS.has(pathname) || CANCEL_PATH.test(pathname);
+  const path = pathname.split("?", 1)[0];
+  return (
+    ALLOWED_PATHS.has(path) ||
+    CANCEL_PATH.test(path) ||
+    CONVERSATION_BASE_PATH.test(path) ||
+    CONVERSATION_TURN_PATH.test(path) ||
+    CONVERSATION_MESSAGE_PATH.test(path) ||
+    CONVERSATION_PROFILE_PATH.test(path)
+  );
 }
 
 export interface SafeAIProxyError {
@@ -116,11 +128,51 @@ export class TrustedAIClient {
     this.fetch = options.fetch ?? globalThis.fetch;
   }
 
-  private async post(
+  private async request(
     pathname: string,
-    body: unknown,
-    options: { credential?: string; signal?: AbortSignal } = {},
+    options: {
+      method: "GET" | "POST" | "PATCH" | "DELETE";
+      body?: unknown;
+      credential?: string;
+      signal?: AbortSignal;
+    },
   ): Promise<unknown> {
+    return (await this.requestEnvelope(pathname, options)).data;
+  }
+
+  private async requestPage(
+    pathname: string,
+    options: {
+      method: "GET";
+    },
+  ): Promise<{ data: unknown[]; nextCursor: string | null }> {
+    const payload = await this.requestEnvelope(pathname, options);
+    if (!Array.isArray(payload.data)) {
+      throw new AIProxyError({
+        code: "invalid_structured_output",
+        messageKey: "ai.errors.invalid_structured_output",
+        retryable: true,
+      });
+    }
+    const meta = payload.meta;
+    return {
+      data: payload.data,
+      nextCursor:
+        meta && typeof meta === "object" && typeof (meta as { nextCursor?: unknown }).nextCursor === "string"
+          ? (meta as { nextCursor: string }).nextCursor
+          : null,
+    };
+  }
+
+  private async requestEnvelope(
+    pathname: string,
+    options: {
+      method: "GET" | "POST" | "PATCH" | "DELETE";
+      body?: unknown;
+      credential?: string;
+      signal?: AbortSignal;
+    },
+  ): Promise<{ data: unknown; meta?: unknown }> {
     if (!isAllowedAIPath(pathname)) {
       throw new AIProxyError({
         code: "permission_denied",
@@ -129,22 +181,41 @@ export class TrustedAIClient {
       });
     }
     const response = await this.fetch(new URL(pathname, this.options.getApiBaseUrl()), {
-      method: "POST",
+      method: options.method,
       headers: {
-        "content-type": "application/json",
         "x-anvilnote-desktop-token": this.options.trustToken,
+        ...(options.body ? { "content-type": "application/json" } : {}),
         ...(options.credential
           ? { "x-anvilnote-ai-credential": options.credential }
           : {}),
       },
-      body: JSON.stringify(body),
+      ...(options.body ? { body: JSON.stringify(options.body) } : {}),
       signal: options.signal,
     });
     const payload: unknown = await response.json().catch(() => null);
     if (!response.ok || !payload || typeof payload !== "object" || !("data" in payload)) {
       throw new AIProxyError(parseErrorPayload(payload));
     }
-    return (payload as { data: unknown }).data;
+    return payload as { data: unknown; meta?: unknown };
+  }
+
+  private post(
+    pathname: string,
+    body: unknown,
+    options: { credential?: string; signal?: AbortSignal } = {},
+  ): Promise<unknown> {
+    return this.request(pathname, { method: "POST", body, ...options });
+  }
+
+  private conversationPath(documentId: string, suffix = ""): string {
+    if (!/^[A-Za-z0-9._:-]{1,128}$/u.test(documentId)) {
+      throw new AIProxyError({
+        code: "invalid_request",
+        messageKey: "ai.errors.invalid_request",
+        retryable: false,
+      });
+    }
+    return `/api/documents/${encodeURIComponent(documentId)}/ai-conversations${suffix}`;
   }
 
   async testConnection(input: {
@@ -211,6 +282,111 @@ export class TrustedAIClient {
     } finally {
       this.active.delete(request.requestId);
     }
+  }
+
+  async listConversations(documentId: string, cursor?: string): Promise<unknown> {
+    const pathname = this.conversationPath(
+      documentId,
+      cursor ? `?cursor=${encodeURIComponent(cursor)}` : "",
+    );
+    return this.requestPage(pathname, { method: "GET" });
+  }
+
+  async listConversationMessages(
+    documentId: string,
+    conversationId: string,
+    cursor?: string,
+  ): Promise<unknown> {
+    if (!/^[A-Za-z0-9._:-]{1,128}$/u.test(conversationId)) {
+      throw new AIProxyError({
+        code: "invalid_request",
+        messageKey: "ai.errors.invalid_request",
+        retryable: false,
+      });
+    }
+    return this.requestPage(
+      this.conversationPath(
+        documentId,
+        `/${encodeURIComponent(conversationId)}/messages${
+          cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""
+        }`,
+      ),
+      { method: "GET" },
+    );
+  }
+
+  async executeConversationTurn(documentId: string, input: unknown): Promise<unknown> {
+    if (!input || typeof input !== "object" || Array.isArray(input)) {
+      throw new AIProxyError({
+        code: "invalid_request",
+        messageKey: "ai.errors.invalid_request",
+        retryable: false,
+      });
+    }
+    const record = input as { provider?: { id?: unknown }; requestId?: unknown };
+    if (
+      !record.provider ||
+      typeof record.provider.id !== "string" ||
+      typeof record.requestId !== "string"
+    ) {
+      throw new AIProxyError({
+        code: "invalid_request",
+        messageKey: "ai.errors.invalid_request",
+        retryable: false,
+      });
+    }
+    const credential = await this.options.secretStore.getForTrustedExecution(
+      record.provider.id,
+    );
+    if (!credential) {
+      throw new AIProxyError({
+        code: "invalid_api_key",
+        messageKey: "ai.errors.invalid_api_key",
+        retryable: false,
+      });
+    }
+    const controller = new AbortController();
+    this.active.set(record.requestId, controller);
+    try {
+      return this.post(this.conversationPath(documentId, "/turns"), input, {
+        credential,
+        signal: controller.signal,
+      });
+    } finally {
+      this.active.delete(record.requestId);
+    }
+  }
+
+  async renameConversation(
+    documentId: string,
+    conversationId: string,
+    label: string,
+  ): Promise<unknown> {
+    if (!/^[A-Za-z0-9._:-]{1,128}$/u.test(conversationId)) {
+      throw new AIProxyError({
+        code: "invalid_request",
+        messageKey: "ai.errors.invalid_request",
+        retryable: false,
+      });
+    }
+    return this.request(
+      this.conversationPath(documentId, `/${encodeURIComponent(conversationId)}`),
+      { method: "PATCH", body: { title: label } },
+    );
+  }
+
+  async deleteConversation(documentId: string, conversationId: string): Promise<unknown> {
+    if (!/^[A-Za-z0-9._:-]{1,128}$/u.test(conversationId)) {
+      throw new AIProxyError({
+        code: "invalid_request",
+        messageKey: "ai.errors.invalid_request",
+        retryable: false,
+      });
+    }
+    return this.request(
+      this.conversationPath(documentId, `/${encodeURIComponent(conversationId)}`),
+      { method: "DELETE" },
+    );
   }
 
   async cancel(requestId: string): Promise<boolean> {

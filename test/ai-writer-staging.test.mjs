@@ -15,11 +15,12 @@ test("desktop packaging resolves and builds AI Writer before consumers", () => {
   const buildWriter = prepare.indexOf('"build-ai-writer.mjs"');
   const buildWeb = prepare.indexOf('"build-web.mjs"');
   const buildApi = prepare.indexOf('"build-api.mjs"');
+  const copyWeb = prepare.indexOf('"copy-web.mjs"');
   const copyWriter = prepare.indexOf('"copy-ai-writer.mjs"');
   const copyApi = prepare.indexOf('"copy-api.mjs"');
 
   assert.ok(buildWriter >= 0 && buildWriter < buildWeb && buildWriter < buildApi);
-  assert.ok(copyWriter >= 0 && copyWriter < copyApi);
+  assert.ok(copyWriter >= 0 && copyWriter < copyWeb && copyWriter < copyApi);
 });
 
 test("AI Writer staging copies only published runtime package files", () => {

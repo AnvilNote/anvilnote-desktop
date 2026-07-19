@@ -18,7 +18,7 @@ import { registerExportDialogHandlers } from "./export-dialog.js";
 import { AISecretStoreImpl } from "./ai/ai-secret-store.js";
 import { registerAIIPCHandlers } from "./ai/ai-ipc.js";
 import { createDesktopTrustToken, TrustedAIClient } from "./ai/trusted-ai-client.js";
-import { userData } from "./paths.js";
+import { AIAttachmentStore } from "./ai/ai-attachment-store.js";
 
 const log = createLogger("main");
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -55,16 +55,21 @@ let aiHandlersRegistered = false;
 function registerAIHandlers(): void {
   if (aiHandlersRegistered) return;
   const secretStore = new AISecretStoreImpl({
-    storageDir: userData.root(),
     platform: process.platform,
     safeStorage,
+    getApiBaseUrl: () => currentApiBaseUrl,
+    trustToken: desktopTrustToken,
   });
   const client = new TrustedAIClient({
     getApiBaseUrl: () => currentApiBaseUrl,
     trustToken: desktopTrustToken,
     secretStore,
   });
-  registerAIIPCHandlers({ ipcMain, secretStore, client });
+  const attachmentStore = new AIAttachmentStore({
+    rootDir: path.join(app.getPath("userData"), "ai-attachments"),
+    safeStorage,
+  });
+  registerAIIPCHandlers({ ipcMain, secretStore, client, attachmentStore });
   aiHandlersRegistered = true;
 }
 

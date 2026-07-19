@@ -80,11 +80,12 @@ AnvilNote currently supports the following interface languages:
 
 ## Smart Mode and OpenAI BYOK
 
-Smart Mode is optional. When enabled, Electron main encrypts the OpenAI API Key
-with the operating system-backed `safeStorage` backend and stores only the
-encrypted blob plus masked metadata. The renderer can save, test, remove, and
-read status, but it has no `getApiKey` operation and never receives a stored
-full key.
+Smart Mode is optional. When enabled, Electron main encrypts each named OpenAI
+key profile with the operating system-backed `safeStorage` backend. The API
+database stores only that ciphertext plus safe metadata; Electron main is the
+only decryptor. The renderer can add, test, rename, activate, deactivate and
+delete profiles, but receives only an allowlisted display such as
+`OpenAI · sk-proj-****5YA`: it has neither `getApiKey` nor ciphertext access.
 
 Each app launch creates a random trust token for the API sidecar. The sidecar
 binds `127.0.0.1`, accepts AI credentials only from the trusted Desktop path,
@@ -92,10 +93,32 @@ and passes each key to the provider for that request without a decrypted cache.
 Linux systems that report Electron's insecure `basic_text` backend use
 session-only storage instead of claiming persistent security.
 
+### Development runtime
+
+Use `pnpm dev:hot` (or `make dev-hot`) from this repository when developing
+Smart Mode UI with hot reload and persistent profiles. This one command first
+assembles the matching trusted sidecars, then starts the sibling Next.js dev
+server inside Electron. Development therefore uses the same
+`safeStorage`-encrypted SQLite vault as the packaged desktop app. Stop any
+separately running `anvilnote-web` dev server before using this command.
+
+Use `pnpm dev` (or `make dev`) when hot reload is unnecessary and the fully
+staged Web build is preferred.
+
+Running `anvilnote-web` directly in a browser is intentionally session-only:
+the browser does not expose Electron `safeStorage`, so it must never claim that
+an API key was persisted.
+
 Smart Mode sends the current instruction and selected/attachment text to
 OpenAI only after an explicit user action. Requests use the Responses API with
 `store: false`, no tools, and no background conversation state. OpenAI billing
 is separate from ChatGPT subscriptions.
+
+Supported Desktop attachments are stored without MinIO or another bundled
+service. Electron main encrypts each content-addressed blob with AES-256-GCM
+using an installation key protected by `safeStorage`. Renderer IPC exposes
+only an opaque ID, display filename, MIME type, size, and persistence status;
+blob paths, hashes, ciphertext, nonces, tags, and keys stay in main.
 
 ## Data Storage
 

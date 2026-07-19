@@ -1,7 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs/promises";
-import os from "node:os";
-import path from "node:path";
 import test from "node:test";
 import { AISecretStoreImpl } from "../dist/main/ai/ai-secret-store.js";
 
@@ -18,77 +15,124 @@ function fakeSafeStorage(options = {}) {
   };
 }
 
-async function withStore(options, run) {
-  const storageDir = await fs.mkdtemp(path.join(os.tmpdir(), "anvilnote-ai-store-"));
-  try {
-    await run(
-      new AISecretStoreImpl({
-        storageDir,
-        platform: options.platform ?? "darwin",
-        safeStorage: options.safeStorage ?? fakeSafeStorage(),
-      }),
-      storageDir,
-    );
-  } finally {
-    await fs.rm(storageDir, { recursive: true, force: true });
-  }
+function createProfileApi() {
+  const profiles = [];
+  const requests = [];
+  const fetch = async (url, init = {}) => {
+    const target = new URL(url);
+    const headers = new Headers(init.headers);
+    assert.equal(headers.get("x-anvilnote-desktop-token"), "launch-token");
+    const body = init.body ? JSON.parse(init.body) : undefined;
+    requests.push({ pathname: target.pathname, body });
+    const json = (data, status = 200) => new Response(JSON.stringify({ data }), { status });
+    if (target.pathname === "/api/ai/key-profiles" && init.method === "GET") {
+      return json(
+        profiles.map(({ encryptedSecret: _encryptedSecret, ...profile }) => profile),
+      );
+    }
+    if (target.pathname === "/api/ai/key-profiles" && init.method === "POST") {
+      const profile = {
+        id: `profile-${profiles.length + 1}`,
+        ...body,
+        display: `OpenAI · ${body.safeDisplayPrefix}****${body.lastFour}`,
+        createdAt: "2026-07-19T00:00:00.000Z",
+        updatedAt: "2026-07-19T00:00:00.000Z",
+      };
+      if (profile.isActive) {
+        profiles.forEach((candidate) => {
+          if (candidate.providerId === profile.providerId) candidate.isActive = false;
+        });
+      }
+      profiles.push(profile);
+      const { encryptedSecret: _encryptedSecret, ...safe } = profile;
+      return json(safe, 201);
+    }
+    if (target.pathname === "/api/ai/key-profiles/active/openai/secret") {
+      const active = profiles.find((profile) => profile.providerId === "openai" && profile.isActive);
+      return active
+        ? json({ id: active.id, providerId: active.providerId, encryptedSecret: active.encryptedSecret })
+        : json({ code: "invalid_api_key" }, 404);
+    }
+    throw new Error(`Unexpected request: ${init.method} ${target.pathname}`);
+  };
+  return { fetch, profiles, requests };
 }
 
-test("secure store saves masked status, decrypts only for trusted execution, and removes", async () => {
-  await withStore({}, async (store) => {
-    const saved = await store.save("openai", "  sk-fake-ending-1234  ");
-    assert.deepEqual(saved.configured, true);
-    assert.equal(saved.lastFour, "1234");
-    assert.equal(saved.storage, "os-secure-storage");
-    assert.equal("secret" in saved, false);
-    assert.equal(await store.getForTrustedExecution("openai"), "sk-fake-ending-1234");
-    await store.remove("openai");
-    assert.equal((await store.getStatus("openai")).configured, false);
+function createStore(options = {}) {
+  const api = options.api ?? createProfileApi();
+  return {
+    api,
+    store: new AISecretStoreImpl({
+      platform: options.platform ?? "darwin",
+      safeStorage: options.safeStorage ?? fakeSafeStorage(),
+      getApiBaseUrl: () => "http://127.0.0.1:38317",
+      trustToken: "launch-token",
+      fetch: api.fetch,
+    }),
+  };
+}
+
+test("secure store persists only safeStorage ciphertext through the trusted profile API", async () => {
+  const { store, api } = createStore();
+  const saved = await store.saveProfile("openai", {
+    label: "Personal",
+    secret: "  sk-proj-test-ending-5YA_  ",
+    isActive: true,
   });
+  assert.equal(saved.display, "OpenAI · sk-proj-****5YA_");
+  assert.equal(JSON.stringify(saved).includes("sk-proj-test"), false);
+  assert.equal(await store.getForTrustedExecution("openai"), "sk-proj-test-ending-5YA_");
+  assert.equal(JSON.stringify(api.profiles).includes("sk-proj-test"), false);
+  assert.equal(JSON.stringify(api.requests).includes("sk-proj-test"), false);
+  assert.equal(api.requests.some((request) => request.pathname.endsWith("/secret")), true);
 });
 
-test("unavailable encryption refuses persistence without leaking the secret", async () => {
-  await withStore(
-    { safeStorage: fakeSafeStorage({ available: false }) },
-    async (store) => {
-      await assert.rejects(() => store.save("openai", "sk-never-in-error"), (error) => {
-        assert.doesNotMatch(String(error), /sk-never-in-error/);
-        return true;
-      });
-      assert.equal((await store.getStatus("openai")).storage, "unavailable");
+test("unavailable encryption refuses persistence without leaking the plaintext key", async () => {
+  const { store, api } = createStore({ safeStorage: fakeSafeStorage({ available: false }) });
+  await assert.rejects(
+    () => store.saveProfile("openai", {
+      label: "Never saved",
+      secret: "sk-never-in-error-1234",
+      isActive: true,
+    }),
+    (error) => {
+      assert.doesNotMatch(String(error), /sk-never-in-error/);
+      return true;
     },
   );
+  assert.equal(api.requests.length, 0);
+  assert.equal((await store.getStatus("openai")).storage, "unavailable");
 });
 
-test("Linux basic_text backend uses session-only memory and never writes a blob", async () => {
-  await withStore(
-    {
-      platform: "linux",
-      safeStorage: fakeSafeStorage({ backend: "basic_text" }),
-    },
-    async (store, storageDir) => {
-      const status = await store.save("openai", "sk-session-5678");
-      assert.equal(status.storage, "session-only");
-      assert.equal(await store.getForTrustedExecution("openai"), "sk-session-5678");
-      assert.deepEqual(await fs.readdir(storageDir), []);
-    },
-  );
-});
-
-test("corrupted encrypted blobs fail closed", async () => {
-  await withStore({}, async (store, storageDir) => {
-    await fs.mkdir(path.join(storageDir, "ai-credentials"), { recursive: true });
-    await fs.writeFile(
-      path.join(storageDir, "ai-credentials", "openai.json"),
-      JSON.stringify({
-        version: 1,
-        providerId: "openai",
-        encrypted: Buffer.from("bad").toString("base64"),
-        lastFour: "0000",
-        updatedAt: new Date().toISOString(),
-      }),
-    );
-    assert.equal((await store.getStatus("openai")).configured, false);
-    assert.equal(await store.getForTrustedExecution("openai"), null);
+test("Linux basic_text keeps keys in session memory and never calls the profile API", async () => {
+  const { store, api } = createStore({
+    platform: "linux",
+    safeStorage: fakeSafeStorage({ backend: "basic_text" }),
   });
+  const saved = await store.saveProfile("openai", {
+    label: "Session",
+    secret: "sk-session-ending-5678",
+    isActive: true,
+  });
+  assert.equal(saved.display, "OpenAI · sk-****5678");
+  assert.equal(await store.getForTrustedExecution("openai"), "sk-session-ending-5678");
+  assert.deepEqual(api.requests, []);
+});
+
+test("corrupted database ciphertext fails closed without exposing a secret", async () => {
+  const { store, api } = createStore();
+  api.profiles.push({
+    id: "profile-corrupt",
+    providerId: "openai",
+    label: "Corrupt",
+    encryptedSecret: Buffer.from("bad").toString("base64"),
+    safeDisplayPrefix: "sk-",
+    lastFour: "0000",
+    display: "OpenAI · sk-****0000",
+    isActive: true,
+    createdAt: "2026-07-19T00:00:00.000Z",
+    updatedAt: "2026-07-19T00:00:00.000Z",
+  });
+  assert.equal(await store.getForTrustedExecution("openai"), null);
+  assert.equal((await store.getStatus("openai")).configured, false);
 });

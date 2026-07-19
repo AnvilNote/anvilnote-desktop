@@ -29,11 +29,53 @@ const api = {
       ipcRenderer.invoke("anvilnote:ai:save-credential", { providerId, apiKey }),
     removeCredential: (providerId: string) =>
       ipcRenderer.invoke("anvilnote:ai:remove-credential", providerId),
+    listKeyProfiles: (providerId: string) =>
+      ipcRenderer.invoke("anvilnote:ai:list-key-profiles", providerId),
+    saveKeyProfile: (input: {
+      providerId: string;
+      label: string;
+      apiKey: string;
+      isActive: boolean;
+    }) => ipcRenderer.invoke("anvilnote:ai:save-key-profile", input),
+    renameKeyProfile: (profileId: string, label: string) =>
+      ipcRenderer.invoke("anvilnote:ai:rename-key-profile", { profileId, label }),
+    activateKeyProfile: (profileId: string) =>
+      ipcRenderer.invoke("anvilnote:ai:activate-key-profile", profileId),
+    deactivateKeyProfile: (profileId: string) =>
+      ipcRenderer.invoke("anvilnote:ai:deactivate-key-profile", profileId),
+    deleteKeyProfile: (profileId: string) =>
+      ipcRenderer.invoke("anvilnote:ai:delete-key-profile", profileId),
     testConnection: (input: { providerId: string; model: string; apiKey?: string }) =>
       ipcRenderer.invoke("anvilnote:ai:test-connection", input),
     estimate: (request: unknown) => ipcRenderer.invoke("anvilnote:ai:estimate", request),
     execute: (request: unknown) => ipcRenderer.invoke("anvilnote:ai:execute", request),
     cancel: (requestId: string) => ipcRenderer.invoke("anvilnote:ai:cancel", requestId),
+    listConversations: (documentId: string, cursor?: string) =>
+      ipcRenderer.invoke("anvilnote:ai:list-conversations", { documentId, cursor }),
+    listConversationMessages: (documentId: string, conversationId: string, cursor?: string) =>
+      ipcRenderer.invoke("anvilnote:ai:list-conversation-messages", {
+        documentId,
+        conversationId,
+        cursor,
+      }),
+    executeConversationTurn: (documentId: string, request: unknown) =>
+      ipcRenderer.invoke("anvilnote:ai:execute-conversation-turn", { documentId, request }),
+    renameConversation: (documentId: string, conversationId: string, title: string) =>
+      ipcRenderer.invoke("anvilnote:ai:rename-conversation", {
+        documentId,
+        conversationId,
+        title,
+      }),
+    deleteConversation: (documentId: string, conversationId: string) =>
+      ipcRenderer.invoke("anvilnote:ai:delete-conversation", {
+        documentId,
+        conversationId,
+      }),
+    prepareAttachments: (attachments: Array<{
+      name: string;
+      mimeType: string;
+      data: ArrayBuffer;
+    }>) => ipcRenderer.invoke("anvilnote:ai:prepare-attachments", attachments),
   },
   // Native folder picker + writer for "export to a folder", bypassing the
   // browser's File System Access API — Chromium refuses to let that API pick

@@ -71,19 +71,40 @@ AnvilNote 目前支援以下介面語言：
 
 ## 智慧模式與 OpenAI BYOK
 
-智慧模式是選用功能。啟用後，Electron 主程序使用作業系統支援的
-`safeStorage` 加密 OpenAI API Key；磁碟只保留加密內容與遮罩後的狀態。
-Renderer 可以儲存、測試、移除及讀取設定狀態，但沒有 `getApiKey`，也無法
-讀回已儲存的完整金鑰。
+智慧模式是選用功能。啟用後，Electron 主程序會使用作業系統支援的
+`safeStorage` 加密每一把具名稱的 OpenAI key profile；API 資料庫只保存
+ciphertext 與安全 metadata，只有 Electron main 可解密。Renderer 可以新增、
+測試、改名、啟用、停用與刪除 profile，但只會看到例如
+`OpenAI · sk-proj-****5YA` 的固定遮罩資訊；沒有 `getApiKey`，也無法讀取
+ciphertext。
 
 App 每次啟動都會為 API sidecar 產生新的隨機信任權杖。Sidecar 僅監聽
 `127.0.0.1`，AI 憑證只接受受信任的 Desktop 路徑，且不快取解密後的
 金鑰。若 Linux 的 Electron 只提供不安全的 `basic_text` backend，系統會
 改用工作階段記憶體，不會宣稱已安全永久儲存。
 
+### 開發時的持久 profile
+
+開發智慧模式 UI、同時需要 hot reload 與可持久的金鑰 profile 時，請在本
+repository 使用 `pnpm dev:hot` 或 `make dev-hot`。這個單一指令會先組裝相符的
+可信任 sidecar，再啟動 sibling Next.js dev server 並放進 Electron；因此開發模式與
+正式 Desktop 共用同一套 `safeStorage` 加密 SQLite vault。執行前請先關閉另外啟動的
+`anvilnote-web` dev server。
+
+不需要 hot reload、想直接測完整 staged Web build 時，使用 `pnpm dev` 或
+`make dev`。
+
+直接以瀏覽器執行 `anvilnote-web` 則刻意只保留當前工作階段：瀏覽器沒有
+Electron `safeStorage`，不得宣稱 API key 已被持久保存。
+
 只有使用者明確執行智慧模式時，指令、選取內容與附件文字才會傳送至
 OpenAI。請求使用 Responses API、`store: false`、不使用工具，也不建立
 背景對話狀態。OpenAI API 計費與 ChatGPT 訂閱分開。
+
+Desktop 支援的附件不會綁入 MinIO 或其他服務。Electron main 以
+`safeStorage` 保護的安裝金鑰，使用 AES-256-GCM 加密 content-addressed
+blob；renderer IPC 只取得不透明 ID、顯示檔名、MIME、大小與是否持久化。
+blob 路徑、雜湊、密文、nonce、驗證 tag 與金鑰都留在 main process。
 
 ## 資料儲存
 
