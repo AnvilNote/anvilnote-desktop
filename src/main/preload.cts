@@ -21,6 +21,20 @@ const api = {
       return null;
     }
   },
+  ai: {
+    getCapabilities: () => ipcRenderer.invoke("anvilnote:ai:capabilities"),
+    getCredentialStatus: (providerId: string) =>
+      ipcRenderer.invoke("anvilnote:ai:credential-status", providerId),
+    saveCredential: (providerId: string, apiKey: string) =>
+      ipcRenderer.invoke("anvilnote:ai:save-credential", { providerId, apiKey }),
+    removeCredential: (providerId: string) =>
+      ipcRenderer.invoke("anvilnote:ai:remove-credential", providerId),
+    testConnection: (input: { providerId: string; model: string; apiKey?: string }) =>
+      ipcRenderer.invoke("anvilnote:ai:test-connection", input),
+    estimate: (request: unknown) => ipcRenderer.invoke("anvilnote:ai:estimate", request),
+    execute: (request: unknown) => ipcRenderer.invoke("anvilnote:ai:execute", request),
+    cancel: (requestId: string) => ipcRenderer.invoke("anvilnote:ai:cancel", requestId),
+  },
   // Native folder picker + writer for "export to a folder", bypassing the
   // browser's File System Access API — Chromium refuses to let that API pick
   // Downloads/Desktop/Documents/the home dir, but Electron's own dialog has no

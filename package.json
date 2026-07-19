@@ -18,9 +18,11 @@
     "clean": "node scripts/clean.mjs",
     "check:repos": "node scripts/ensure-sibling-repos.mjs",
     "build:web": "node scripts/build-web.mjs",
+    "build:ai-writer": "node scripts/build-ai-writer.mjs",
     "build:api": "node scripts/build-api.mjs",
     "build:renderer": "node scripts/build-renderer.mjs",
     "copy:web": "node scripts/copy-web.mjs",
+    "copy:ai-writer": "node scripts/copy-ai-writer.mjs",
     "copy:api": "node scripts/copy-api.mjs",
     "copy:renderer": "node scripts/copy-renderer.mjs",
     "copy:resources": "node scripts/copy-resources.mjs",
@@ -39,6 +41,7 @@
     "dist:win": "pnpm prepare:desktop && pnpm fetch:typst:windows && pnpm fetch:pandoc:windows && pnpm build:main && electron-builder --win nsis --x64 --config electron-builder.config.cjs"
   },
   "dependencies": {
+    "@anvilnote/ai-writer": "file:../anvilnote-ai-writer",
     "dotenv": "^16.4.7"
   },
   "devDependencies": {

@@ -67,7 +67,23 @@ AnvilNote 目前支援以下介面語言：
 - 不需要登入
 - 不需要另外安裝 Typst
 - 不需要另外安裝 Node.js
-- 目前不依賴外部雲端服務
+- 核心編輯與輸出功能不依賴外部雲端服務
+
+## 智慧模式與 OpenAI BYOK
+
+智慧模式是選用功能。啟用後，Electron 主程序使用作業系統支援的
+`safeStorage` 加密 OpenAI API Key；磁碟只保留加密內容與遮罩後的狀態。
+Renderer 可以儲存、測試、移除及讀取設定狀態，但沒有 `getApiKey`，也無法
+讀回已儲存的完整金鑰。
+
+App 每次啟動都會為 API sidecar 產生新的隨機信任權杖。Sidecar 僅監聽
+`127.0.0.1`，AI 憑證只接受受信任的 Desktop 路徑，且不快取解密後的
+金鑰。若 Linux 的 Electron 只提供不安全的 `basic_text` backend，系統會
+改用工作階段記憶體，不會宣稱已安全永久儲存。
+
+只有使用者明確執行智慧模式時，指令、選取內容與附件文字才會傳送至
+OpenAI。請求使用 Responses API、`store: false`、不使用工具，也不建立
+背景對話狀態。OpenAI API 計費與 ChatGPT 訂閱分開。
 
 ## 資料儲存
 

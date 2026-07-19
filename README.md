@@ -76,7 +76,26 @@ AnvilNote currently supports the following interface languages:
 - No login required
 - No separate Typst install required
 - No separate Node.js install required
-- No dependency on external cloud services at this time
+- Core editing and export work without an external cloud service
+
+## Smart Mode and OpenAI BYOK
+
+Smart Mode is optional. When enabled, Electron main encrypts the OpenAI API Key
+with the operating system-backed `safeStorage` backend and stores only the
+encrypted blob plus masked metadata. The renderer can save, test, remove, and
+read status, but it has no `getApiKey` operation and never receives a stored
+full key.
+
+Each app launch creates a random trust token for the API sidecar. The sidecar
+binds `127.0.0.1`, accepts AI credentials only from the trusted Desktop path,
+and passes each key to the provider for that request without a decrypted cache.
+Linux systems that report Electron's insecure `basic_text` backend use
+session-only storage instead of claiming persistent security.
+
+Smart Mode sends the current instruction and selected/attachment text to
+OpenAI only after an explicit user action. Requests use the Responses API with
+`store: false`, no tools, and no background conversation state. OpenAI billing
+is separate from ChatGPT subscriptions.
 
 ## Data Storage
 
