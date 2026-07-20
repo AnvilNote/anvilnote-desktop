@@ -28,3 +28,11 @@ test("hot development has one Desktop entry point for Next hot reload and secure
   assert.match(script, /ANVILNOTE_WEB_DEV_URL/u);
   assert.match(script, /electron/u);
 });
+
+test("desktop web commands explicitly select the desktop runtime", () => {
+  const buildScript = fs.readFileSync(path.join(repoRoot, "scripts/build-web.mjs"), "utf8");
+  const hotScript = fs.readFileSync(path.join(repoRoot, "scripts/dev-hot.mjs"), "utf8");
+
+  assert.match(buildScript, /run\("pnpm", \["build:desktop"\], c\.webDir\)/u);
+  assert.match(hotScript, /spawnTracked\(\["dev:desktop"\], c\.webDir\)/u);
+});

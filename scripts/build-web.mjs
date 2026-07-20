@@ -1,5 +1,5 @@
-import { config, buildSibling, logStep } from "./load-env.mjs";
+import { config, logStep, run } from "./load-env.mjs";
 
 const c = config();
 logStep("Building anvilnote-web");
-buildSibling("anvilnote-web", c.webDir);
+run("pnpm", ["build:desktop"], c.webDir);
