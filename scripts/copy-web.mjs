@@ -28,7 +28,7 @@ const staticDir = path.join(nextDir, "static");
 if (!fs.existsSync(standalone)) {
   fail(
     `Standalone build not found at ${standalone}. Ensure anvilnote-web has ` +
-      `output:"standalone" in next.config and run \`pnpm build:web\` first.`,
+      `output:"standalone" in next.config and run \`pnpm build\` first.`,
   );
 }
 

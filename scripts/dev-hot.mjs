@@ -83,7 +83,7 @@ run("pnpm", ["prepare:desktop"], repoRoot);
 run("pnpm", ["build:main"], repoRoot);
 
 logStep(`Starting Next.js hot reload at ${webDevUrl}`);
-const web = spawnTracked(["dev:desktop"], c.webDir);
+const web = spawnTracked(["dev"], c.webDir);
 
 try {
   await waitForWeb(web);
