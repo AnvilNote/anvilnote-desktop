@@ -68,6 +68,10 @@ for (const arch of archs) {
     // arm64 from it; on Apple Silicon the amd64 container runs under emulation.
     "-e", `TARGET_ARCH=${arch}`,
     "-v", `${repoRoot}:/project`,
+    // pnpm resolves the "@anvilnote/ai-writer": "file:../anvilnote-ai-writer"
+    // dependency relative to /project, i.e. /anvilnote-ai-writer inside the
+    // container — bind-mount the sibling repo there to match.
+    "-v", `${c.aiWriterDir}:/anvilnote-ai-writer`,
     // Anonymous volume shadows the host node_modules so the linux-native install
     // inside the container never clobbers the host's macOS node_modules.
     "-v", "/project/node_modules",
