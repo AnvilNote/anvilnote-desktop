@@ -9,10 +9,12 @@
 // ships its own engine); @prisma/client is imported type-only, so no default
 // client generation is required.
 //
-// IMPORTANT: the Prisma SQLite engine is platform-specific. Run `prepare`/`pack`
-// on the TARGET macOS arch so build:desktop generates the darwin engine
-// (prisma/sqlite.prisma sets binaryTargets darwin/darwin-arm64). Set
-// ANVILNOTE_SKIP_API_DEPS=1 to skip the install during fast dev iteration.
+// IMPORTANT: the Prisma SQLite engine is platform-specific. `prepare:desktop`
+// re-runs anvilnote-api's build:desktop fresh for every dist:* target, which
+// regenerates prisma/sqlite.prisma's engines for whichever entries are listed
+// in binaryTargets (currently darwin/darwin-arm64/linux/windows) — so each
+// platform leg of a release picks up its own matching engine automatically.
+// Set ANVILNOTE_SKIP_API_DEPS=1 to skip the install during fast dev iteration.
 
 import fs from "node:fs";
 import path from "node:path";
