@@ -1,0 +1,14 @@
+name: Notify doc site of new release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  revalidate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping anvilnote-doc revalidate endpoint
+        run: |
+          curl -fsSL -X POST "https://www.anvilnote.org/api/revalidate" \
+            -H "x-revalidate-secret: ${{ secrets.REVALIDATE_SECRET }}"
