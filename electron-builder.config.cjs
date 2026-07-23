@@ -6,13 +6,21 @@
 // config simply lifts that prepared tree into the app's Resources directory, so
 // `dist/app` is the single source of truth for everything that ships.
 //
-// TODO: Add Developer ID signing, hardened runtime, notarization, and stapling
-// before public release. The first version is intentionally unsigned.
-
 /** @type {import('electron-builder').Configuration} */
 module.exports = {
   appId: "com.anvilnote.app",
   productName: "AnvilNote",
+  // Needed so electron-builder emits the update metadata files
+  // (latest-mac.yml / latest.yml / latest-linux.yml) that electron-updater
+  // reads to detect new releases. Every build script explicitly passes
+  // --publish never, so this does NOT make any build upload or create a
+  // GitHub Release by itself — the release script uploads the metadata
+  // files alongside the installers by hand, same as any other asset.
+  publish: {
+    provider: "github",
+    owner: "AnvilNote",
+    repo: "anvilnote-desktop",
+  },
   directories: {
     output: "release",
     buildResources: "build",
@@ -42,15 +50,36 @@ module.exports = {
     // App icon, rasterized from anvilnote-web's favicon-dark (dark feather logo).
     // electron-builder generates the .icns from this 1024x1024 png.
     icon: "build/icon.png",
-    // The first version is intentionally unsigned. identity: null disables
-    // electron-builder's auto-discovery of a local Developer ID, which would
-    // otherwise try to codesign the entire bundled node_modules tree and crash
-    // with EMFILE on the macOS open-files limit.
-    // TODO: set a real signing identity, "hardenedRuntime": true,
-    // "gatekeeperAssess": false, entitlements, and notarization before release.
-    identity: null,
+    // Public macOS artifacts must never silently fall back to unsigned output.
+    // Scoped to mac only — the Windows build has no code-signing identity yet
+    // and ships unsigned intentionally (see win/nsis below); a top-level
+    // forceCodeSigning would fail-close that build too.
+    forceCodeSigning: true,
+    hardenedRuntime: true,
+    gatekeeperAssess: false,
+    entitlements: "build/entitlements.mac.plist",
+    entitlementsInherit: "build/entitlements.mac.inherit.plist",
+    // The Desktop runtime is intentionally unpacked because its Next/API
+    // sidecars execute from Resources. @electron/osx-sign otherwise treats
+    // non-text assets such as fonts, PDF CMaps, images, and archives as
+    // signable binaries. Signing those data files creates invalid extended
+    // signatures and breaks the outer bundle seal. They remain protected by
+    // the enclosing App/framework resource seal; real Mach-O code (.node,
+    // .dylib, extensionless executables, nested apps/frameworks) is not
+    // ignored and is still signed bottom-up.
+    signIgnore: [
+      "\\.(?:asar|bcmap|bin|body|cjs|dat|docx|gif|icc|icns|ico|jpg|json|nib|otf|pak|pdf|pfb|png|ttf|wasm|woff|woff2|zip)$",
+      "(?:^|/)\\.jekyll-metadata$",
+    ],
+    // The explicit two-phase release script uses the local notarytool
+    // Keychain profile only for `dist:mac:release`. Disable electron-builder's
+    // built-in notarization to avoid submitting the same app twice.
+    notarize: false,
   },
   win: {
+    // Intentionally unsigned: no Windows code-signing certificate yet. Users
+    // installing the .exe will see a SmartScreen "unknown publisher" warning
+    // until Authenticode signing is added — see README's Windows note.
     target: ["nsis"],
     icon: "build/icon.png",
   },
@@ -77,7 +106,7 @@ module.exports = {
     // at the standard hicolor sizes; regenerate it if build/icon.png changes.
     icon: "build/icons",
     vendor: "AnvilNote",
-    maintainer: "AnvilNote <sungpinyue@gmail.com>",
+    maintainer: "AnvilNote <team@anvilnote.org>",
     synopsis: "Offline-first writing and notes app",
     description:
       "AnvilNote is a desktop writing and notes app for long-form notes, lecture handouts, reports, and academic documents. It supports block editing, math formulas, code blocks, images, tables, templates, and PDF export. It works offline-first and does not require login, Node.js, or Typst to be installed separately.",
@@ -106,9 +135,8 @@ module.exports = {
     title: "AnvilNote",
   },
   pkg: {
-    // productbuild-based installer. The richer Distribution XML / Welcome /
-    // Read Me / License / Conclusion flow under installer/ can be wired in via
-    // scripts/make-pkg.sh when a fully custom installer is needed.
+    // Used by scripts/build-macos-containers.mjs as the install location for
+    // the custom metadata-free, Developer ID Installer-signed component PKG.
     installLocation: "/Applications",
   },
 };
