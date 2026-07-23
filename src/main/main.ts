@@ -9,6 +9,7 @@ import { app, BrowserWindow, ipcMain, Menu, safeStorage, session, shell } from "
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
+import { autoUpdater } from "electron-updater";
 import { repoRoot, runtimePaths, isPackaged, appIconPath } from "./paths.js";
 import { startLocalApi, stopLocalApi } from "./local-api.js";
 import { startLocalWeb, stopLocalWeb } from "./local-web.js";
@@ -19,6 +20,7 @@ import { AISecretStoreImpl } from "./ai/ai-secret-store.js";
 import { registerAIIPCHandlers } from "./ai/ai-ipc.js";
 import { createDesktopTrustToken, TrustedAIClient } from "./ai/trusted-ai-client.js";
 import { AIAttachmentStore } from "./ai/ai-attachment-store.js";
+import { AppUpdaterController, registerUpdaterIPCHandlers } from "./updater.js";
 
 const log = createLogger("main");
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -180,10 +182,23 @@ for development.</p></body></html>`;
   return `data:text/html;charset=utf-8,${encodeURIComponent(html)}`;
 }
 
+// Auto-update only ever runs in a packaged production build — never in dev,
+// tests, or an unsigned local build. On macOS, Squirrel.Mac (which
+// electron-updater drives there) requires the running app itself to be
+// signed; an unsigned dev run simply has nothing to update from.
+function registerUpdater(): void {
+  if (!app.isPackaged) return;
+  autoUpdater.autoDownload = false;
+  const controller = new AppUpdaterController(autoUpdater, () => mainWindow?.webContents ?? null);
+  registerUpdaterIPCHandlers(ipcMain, controller);
+  void controller.check();
+}
+
 async function bootstrap(): Promise<void> {
   installMenuWithoutZoom();
   registerApiRequestRouting();
   registerAIHandlers();
+  registerUpdater();
 
   // 1. API sidecar (SQLite under ~/.anvilnote). Required in production.
   let apiBaseUrl = currentApiBaseUrl;

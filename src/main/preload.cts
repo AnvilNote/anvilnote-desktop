@@ -91,6 +91,19 @@ const api = {
   ): Promise<string> {
     return ipcRenderer.invoke("anvilnote:write-export-file", dirPath, segments, data);
   },
+  // One-click in-app update. No-ops on a non-packaged/dev build since main.ts
+  // never registers these IPC handlers there.
+  update: {
+    check: () => ipcRenderer.invoke("anvilnote:update:check"),
+    download: () => ipcRenderer.invoke("anvilnote:update:download"),
+    install: () => ipcRenderer.invoke("anvilnote:update:install"),
+    // Returns an unsubscribe function so the renderer can clean up on unmount.
+    onStatus(callback: (status: unknown) => void): () => void {
+      const listener = (_event: Electron.IpcRendererEvent, status: unknown) => callback(status);
+      ipcRenderer.on("anvilnote:update:status", listener);
+      return () => ipcRenderer.removeListener("anvilnote:update:status", listener);
+    },
+  },
   versions: {
     electron: process.versions.electron,
     node: process.versions.node,
