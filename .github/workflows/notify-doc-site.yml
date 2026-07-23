@@ -2,7 +2,12 @@ name: Notify doc site of new release
 
 on:
   release:
-    types: [published]
+    # published: a new release goes live.
+    # deleted / unpublished: a release is removed or pulled back to draft —
+    # without these, deleting the current "latest" release (as happened with
+    # the mistaken 0.18.0/0.18.1 tags) leaves the doc site's cached GitHub
+    # API response stale until its 1hr revalidate window expires on its own.
+    types: [published, deleted, unpublished]
 
 jobs:
   revalidate:
