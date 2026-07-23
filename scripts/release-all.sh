@@ -4,7 +4,8 @@
 # backgrounded so the next platform's build starts immediately instead of
 # waiting on the network transfer. Invoked by `make release-all VERSION=x.y.z`.
 #
-# Platforms build sequentially, not concurrently: pnpm dist:mac/win/linux all
+# Platforms build sequentially, not concurrently: the macOS release pipeline
+# and pnpm dist:win/linux all
 # run prepare:desktop, which wipes dist/ and release/ first (scripts/clean.mjs)
 # and reassembles dist/app from the sibling repos — running two of those at
 # once would race on the same directories and corrupt both builds. Only the
@@ -60,7 +61,7 @@ upload_async() {
 }
 
 echo "==> Building macOS (dmg + pkg)"
-pnpm dist:mac
+pnpm dist:mac:release
 cp release/*.dmg release/*.pkg "$STAGE_DIR"/
 upload_async "$STAGE_DIR"/*.dmg "$STAGE_DIR"/*.pkg
 

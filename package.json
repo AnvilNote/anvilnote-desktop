@@ -1,12 +1,12 @@
 {
   "name": "anvilnote",
-  "version": "0.18.1",
+  "version": "0.1.19",
   "private": true,
   "license": "MIT",
   "description": "Offline-first writing and notes app",
   "author": {
     "name": "AnvilNote",
-    "email": "sungpinyue@gmail.com"
+    "email": "team@anvilnote.org"
   },
   "homepage": "https://github.com/AnvilNote/anvilnote-desktop",
   "type": "module",
@@ -30,10 +30,12 @@
     "build:main": "tsc -p tsconfig.json",
     "dev": "pnpm prepare:desktop && pnpm build:main && electron dist/main/main.js",
     "dev:hot": "node scripts/dev-hot.mjs",
-    "pack": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dir --config electron-builder.config.cjs",
-    "dist:dmg": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dmg --config electron-builder.config.cjs",
-    "dist:pkg": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac pkg --config electron-builder.config.cjs",
-    "dist:mac": "pnpm prepare:desktop && pnpm build:main && electron-builder --mac dmg pkg --config electron-builder.config.cjs",
+    "pack": "node scripts/build-macos.mjs dir",
+    "dist:dmg": "node scripts/build-macos.mjs dmg",
+    "dist:pkg": "node scripts/build-macos.mjs pkg",
+    "dist:mac": "node scripts/build-macos.mjs all",
+    "dist:mac:release": "node scripts/release-macos.mjs",
+    "verify:mac": "node scripts/verify-macos-artifacts.mjs",
     "fetch:typst:linux": "node scripts/fetch-typst-linux.mjs",
     "fetch:pandoc:linux": "node scripts/fetch-pandoc-linux.mjs",
     "dist:linux": "node scripts/dist-linux.mjs",
@@ -43,9 +45,11 @@
   },
   "dependencies": {
     "@anvilnote/ai-writer": "file:../anvilnote-ai-writer",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "electron-updater": "^6.8.9"
   },
   "devDependencies": {
+    "@electron/notarize": "^2.5.0",
     "@types/node": "^22.10.5",
     "electron": "^33.3.1",
     "electron-builder": "^25.1.8",

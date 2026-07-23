@@ -22,7 +22,9 @@ Download the latest public preview from [GitHub Releases](https://github.com/Anv
 | Windows | NSIS `.exe` | x64 |
 | Linux | `.deb`, `.AppImage` | x64, arm64 |
 
-The current macOS builds are not code signed or notarized by Apple. macOS may therefore display a warning on first launch. If the app is blocked, right-click AnvilNote and choose **Open**, or allow it under **System Settings > Privacy & Security**.
+The currently published `v0.1.18` macOS artifacts are not code signed or notarized by Apple. macOS may therefore display a warning on first launch. If the app is blocked, right-click AnvilNote and choose **Open**, or allow it under **System Settings > Privacy & Security**. The maintainer build pipeline now supports Developer ID signing, but the public wording must not change until a later release has completed Apple notarization, stapling, and clean-environment verification.
+
+The Windows `.exe` is not code signed (no Authenticode certificate yet). Windows SmartScreen will show an "unknown publisher" warning on first run — choose **More info > Run anyway** after confirming the download came from the official release page.
 
 If macOS reports that the installed app is damaged, the unsigned build may still have a download quarantine flag. After confirming that the file came from the official release page, remove the flag with:
 
@@ -111,9 +113,17 @@ pnpm test
 pnpm prepare:desktop
 pnpm pack
 pnpm dist:mac
+pnpm dist:mac:release
+pnpm verify:mac
 pnpm dist:win
 pnpm dist:linux
 ```
+
+`pnpm dist:mac:release` is a maintainer-only command. It requires a clean
+`main` worktree, Developer ID Application and Installer identities in the
+Keychain, and the `AnvilNote Notarization` notarytool profile. It signs,
+submits to Apple notarization, staples, verifies, and prints SHA-256 hashes; it
+does not publish a GitHub Release.
 
 Release builds bundle the required Typst and Pandoc executables. Source-development workflows may use the sibling repositories' documented tool setup.
 

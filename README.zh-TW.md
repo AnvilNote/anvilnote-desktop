@@ -22,7 +22,9 @@ AnvilNote Desktop 將編輯器、API、PDF Renderer、DOCX Exporter 與相關服
 | Windows | NSIS `.exe` | x64 |
 | Linux | `.deb`、`.AppImage` | x64、arm64 |
 
-目前的 macOS 安裝檔尚未完成 Apple 程式碼簽章與公證，首次開啟時可能顯示安全警告。若系統阻擋開啟，請對 AnvilNote 按右鍵並選擇「打開」，或前往「系統設定 > 隱私權與安全性」允許執行。
+目前公開的 `v0.1.18` macOS 安裝檔尚未完成 Apple 程式碼簽章與公證，首次開啟時可能顯示安全警告。若系統阻擋開啟，請對 AnvilNote 按右鍵並選擇「打開」，或前往「系統設定 > 隱私權與安全性」允許執行。維護者建置流程現已支援 Developer ID 簽章，但在後續版本完成 Apple 公證、stapling 與乾淨環境驗證前，不得修改公開版本的簽章狀態說明。
+
+Windows 版 `.exe` 尚未完成程式碼簽章（還沒有 Authenticode 憑證）。首次執行時 Windows SmartScreen 會顯示「未知發行者」警告，請在確認下載來源為官方 Release 頁面後，選擇「其他資訊 > 仍要執行」。
 
 若 macOS 顯示應用程式已損毀，可能是未簽章版本仍帶有下載隔離標記。確認檔案來自官方 Release 頁面後，可在安裝至 `/Applications` 後執行：
 
@@ -111,9 +113,17 @@ pnpm test
 pnpm prepare:desktop
 pnpm pack
 pnpm dist:mac
+pnpm dist:mac:release
+pnpm verify:mac
 pnpm dist:win
 pnpm dist:linux
 ```
+
+`pnpm dist:mac:release` 僅供維護者使用。執行時必須位於 clean `main`
+工作目錄，登入鑰匙圈中需有 Developer ID Application 與 Installer
+憑證，並已建立 `AnvilNote Notarization` notarytool 設定檔。此命令會完成
+簽章、送交 Apple 公證、stapling、驗證與 SHA-256 計算，但不會自行建立或
+上傳 GitHub Release。
 
 正式安裝版本已包含所需的 Typst 與 Pandoc 執行檔。從原始碼開發時，請依各相鄰儲存庫的說明準備工具。
 
