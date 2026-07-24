@@ -86,6 +86,22 @@ export function verifyMacArtifacts(
     run("xcrun", ["stapler", "validate", pkg]);
     run("shasum", ["-a", "256", pkg]);
   }
+
+  // zip has no signature/staple of its own (see staple-macos-artifacts.mjs) —
+  // what matters is that the .app inside still carries a valid, stapled
+  // signature after archiving.
+  for (const zip of found.zips) {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "anvilnote-zip-verify-"));
+    try {
+      run("ditto", ["-x", "-k", zip, tempRoot]);
+      const extractedApp = path.join(tempRoot, "AnvilNote.app");
+      run("codesign", ["--verify", "--deep", "--strict", "--verbose=2", extractedApp]);
+      run("xcrun", ["stapler", "validate", extractedApp]);
+    } finally {
+      fs.rmSync(tempRoot, { recursive: true, force: true });
+    }
+    run("shasum", ["-a", "256", zip]);
+  }
 }
 
 const isMain =

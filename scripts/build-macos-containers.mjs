@@ -66,6 +66,7 @@ function artifactPaths(releaseDir, arch) {
   return {
     dmg: path.join(releaseDir, `${stem}.dmg`),
     pkg: path.join(releaseDir, `${stem}.pkg`),
+    zip: path.join(releaseDir, `${stem}.zip`),
     version: packageJson.version,
   };
 }
@@ -108,6 +109,32 @@ function buildAndSignDmg({ appPath, dmgPath, env }) {
   });
   run("codesign", ["--verify", "--verbose=2", dmgPath], { env });
   run("hdiutil", ["verify", dmgPath], { env });
+}
+
+// A zip archive isn't a codesigned container the way dmg/pkg are — Gatekeeper
+// only ever checks the .app once it's extracted, and that .app is already
+// correctly signed by finalizeMacSignature before this runs. So the only
+// thing worth verifying here is that zipping (via electron-builder's own
+// --prepackaged path, which just archives the given tree without touching
+// it) didn't silently corrupt the signature already baked into appPath.
+function buildZip({ appPath, zipPath, env }) {
+  fs.rmSync(zipPath, { force: true });
+  run(
+    "pnpm",
+    [
+      "exec",
+      "electron-builder",
+      "--prepackaged",
+      appPath,
+      "--mac",
+      "zip",
+      "--config",
+      "electron-builder.config.cjs",
+      "--publish",
+      "never",
+    ],
+    { env },
+  );
 }
 
 function buildSignedPkg({ appPath, pkgPath, version, env }) {
@@ -182,7 +209,7 @@ export function buildMacContainers({
 
   const requested = new Set(targets);
   for (const target of requested) {
-    if (target !== "dmg" && target !== "pkg") {
+    if (target !== "dmg" && target !== "pkg" && target !== "zip") {
       throw new Error(`unsupported macOS container target: ${target}`);
     }
   }
@@ -204,9 +231,14 @@ export function buildMacContainers({
     });
     verifyApp(appPath, { env });
   }
+  if (requested.has("zip")) {
+    buildZip({ appPath, zipPath: artifacts.zip, env });
+    verifyApp(appPath, { env });
+  }
 
   return {
     dmg: requested.has("dmg") ? artifacts.dmg : undefined,
     pkg: requested.has("pkg") ? artifacts.pkg : undefined,
+    zip: requested.has("zip") ? artifacts.zip : undefined,
   };
 }

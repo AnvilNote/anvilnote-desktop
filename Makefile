@@ -46,6 +46,22 @@ dist-pkg: ## Build a signed macOS PKG
 dist-mac: ## Build signed macOS DMG and PKG installers
 	$(PM) dist:mac
 
+# macOS auto-update requires a signed+notarized zip artifact, not just dmg/pkg:
+# 1. electron-updater's MacUpdater.doDownloadUpdate() *only* accepts a zip file
+#    (findFile(files, "zip", ["pkg", "dmg"])) -- dmg/pkg-only releases make the
+#    download step throw ERR_UPDATER_ZIP_FILE_NOT_FOUND, even though the check
+#    step succeeds.
+# 2. app-update.yml (the file inside Contents/Resources telling the app which
+#    GitHub repo to poll) is normally embedded by electron-builder's own
+#    afterPack hook -- but ONLY when that hook's packaging pass already knows
+#    about a dmg/zip target. Our two-phase build (`--mac dir` alone, then a
+#    *separate* `--prepackaged` pass for containers) never gives that first
+#    pass a dmg/zip target, so electron-builder never writes the file and
+#    checkForUpdates() throws immediately (ENOENT) on every launch.
+# scripts/build-macos.mjs writes app-update.yml itself (before the final
+# codesign) as a fix for #2; the mac target list including "zip" (see
+# electron-builder.config.cjs) is the fix for #1. Forgetting either one means
+# Settings > Software Update always shows an error, never "up to date".
 dist-mac-release: ## Build, notarize, staple, and verify macOS artifacts
 	$(PM) dist:mac:release
 

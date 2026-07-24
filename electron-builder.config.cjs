@@ -46,7 +46,10 @@ module.exports = {
   ],
   mac: {
     category: "public.app-category.productivity",
-    target: ["dmg", "pkg"],
+    // zip is required for in-app auto-update: electron-updater's MacUpdater
+    // only ever downloads a zip file (dmg/pkg are install-time-only formats
+    // to it) — see the Makefile's dist-mac-release note for the full story.
+    target: ["dmg", "pkg", "zip"],
     // App icon, rasterized from anvilnote-web's favicon-dark (dark feather logo).
     // electron-builder generates the .icns from this 1024x1024 png.
     icon: "build/icon.png",

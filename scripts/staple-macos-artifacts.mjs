@@ -19,9 +19,15 @@ export function notarizeAndStapleContainers({
     throw new Error("macOS notarization can only run on macOS");
   }
 
+  // zip is deliberately excluded here: it's a plain archive of the already
+  // notarized-and-stapled .app (built by buildZip in
+  // build-macos-containers.mjs), not its own signed container the way dmg/pkg
+  // are — Gatekeeper checks the .app's own staple once extracted, so zip
+  // itself has nothing to submit to notarytool or staple.
   const { dmgs, pkgs } = findMacArtifacts(releaseDir);
-  if (dmgs.length === 0) throw new Error("no .dmg artifact was found");
-  if (pkgs.length === 0) throw new Error("no .pkg artifact was found");
+  if (dmgs.length === 0 && pkgs.length === 0) {
+    throw new Error("no .dmg or .pkg artifact was found to notarize");
+  }
 
   for (const artifact of [...dmgs, ...pkgs]) {
     run("xcrun", [

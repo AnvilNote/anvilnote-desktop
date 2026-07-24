@@ -90,19 +90,24 @@ function releaseEnvironment() {
   return env;
 }
 
+// Optional CLI arg to build only some containers, e.g. `node
+// scripts/release-macos.mjs dmg` to skip pkg/zip for a quick confirm-then-
+// continue cycle. Defaults to all three.
+const requestedTargets = process.argv[2] ? process.argv[2].split(",") : ["dmg", "pkg", "zip"];
+
 try {
   assertReleasePreconditions();
   const env = releaseEnvironment();
 
   // Build and finalise the signed app first. The app must be notarized and
-  // stapled before the DMG and metadata-free PKG staging pipelines read it.
+  // stapled before the DMG/PKG/zip staging pipelines read it.
   run(process.execPath, ["scripts/build-macos.mjs", "dir"], env);
   await notarizeAndStapleMacApp(appPath, { keychainProfile });
 
   const packagingEnv = { ...env, ANVILNOTE_MAC_RELEASE: "0" };
   buildMacContainers({
     appPath,
-    targets: ["dmg", "pkg"],
+    targets: requestedTargets,
     env: packagingEnv,
   });
   run(process.execPath, ["scripts/staple-macos-artifacts.mjs"], env);
