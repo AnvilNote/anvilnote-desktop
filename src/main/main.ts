@@ -9,7 +9,7 @@ import { app, BrowserWindow, ipcMain, Menu, safeStorage, session, shell } from "
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
-import { autoUpdater } from "electron-updater";
+import electronUpdaterPkg from "electron-updater";
 import { repoRoot, runtimePaths, isPackaged, appIconPath } from "./paths.js";
 import { startLocalApi, stopLocalApi } from "./local-api.js";
 import { startLocalWeb, stopLocalWeb } from "./local-web.js";
@@ -21,6 +21,14 @@ import { registerAIIPCHandlers } from "./ai/ai-ipc.js";
 import { createDesktopTrustToken, TrustedAIClient } from "./ai/trusted-ai-client.js";
 import { AIAttachmentStore } from "./ai/ai-attachment-store.js";
 import { AppUpdaterController, registerUpdaterIPCHandlers } from "./updater.js";
+
+// electron-updater is CommonJS; this package is "type": "module", and Node's
+// ESM loader can't statically extract a named export from every CJS module
+// shape. A default import + destructure works where `import { autoUpdater }`
+// fails at runtime in the packaged app with "Named export 'autoUpdater' not
+// found" (tsc's type-checking pass doesn't catch this — it's a Node ESM
+// runtime behavior, not a type error).
+const { autoUpdater } = electronUpdaterPkg;
 
 const log = createLogger("main");
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
