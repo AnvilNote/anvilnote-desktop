@@ -13,6 +13,7 @@ import electronUpdaterPkg from "electron-updater";
 import { repoRoot, runtimePaths, isPackaged, appIconPath } from "./paths.js";
 import { startLocalApi, stopLocalApi } from "./local-api.js";
 import { startLocalWeb, stopLocalWeb } from "./local-web.js";
+import { startLocalFuncs, stopLocalFuncs } from "./local-funcs.js";
 import { createLogger } from "./logger.js";
 import { rewriteDevApiUrl } from "./request-routing.js";
 import { registerExportDialogHandlers } from "./export-dialog.js";
@@ -55,6 +56,7 @@ const DEFAULT_API_PORT = 38317;
 const DEFAULT_WEB_PORT = 38318;
 const apiPort = Number(process.env.ANVILNOTE_DESKTOP_PORT ?? DEFAULT_API_PORT);
 const webPort = Number(process.env.ANVILNOTE_WEB_PORT ?? DEFAULT_WEB_PORT);
+const funcsPort = Number(process.env.ANVILNOTE_FUNCS_PORT ?? 8100);
 
 let mainWindow: BrowserWindow | null = null;
 let appUrl: string | null = null;
@@ -208,11 +210,26 @@ async function bootstrap(): Promise<void> {
   registerAIHandlers();
   registerUpdater();
 
-  // 1. API sidecar (SQLite under ~/.anvilnote). Required in production.
+  // 1. Funcs sidecar (sympy + pgfplots/TikZ + tectonic). Best-effort: a
+  //    missing/broken funcs sidecar should not block the rest of the app —
+  //    the function-plot feature will just show a render error until it's
+  //    available, same tolerance policy as the API sidecar below. Must start
+  //    before the API sidecar so its base URL can be handed into that
+  //    sidecar's env.
+  let funcsBaseUrl: string | undefined;
+  try {
+    const funcs = await startLocalFuncs(funcsPort);
+    funcsBaseUrl = funcs.baseUrl;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    log.warn(`funcs sidecar not started (continuing): ${message}`);
+  }
+
+  // 2. API sidecar (SQLite under ~/.anvilnote). Required in production.
   let apiBaseUrl = currentApiBaseUrl;
   const webOrigin = `http://127.0.0.1:${webPort}`;
   try {
-    const api = await startLocalApi(apiPort, webOrigin, desktopTrustToken);
+    const api = await startLocalApi(apiPort, webOrigin, desktopTrustToken, funcsBaseUrl);
     apiBaseUrl = api.baseUrl;
     process.env.ANVILNOTE_API_BASE_URL = api.baseUrl;
   } catch (err) {
@@ -222,7 +239,7 @@ async function bootstrap(): Promise<void> {
   }
   currentApiBaseUrl = apiBaseUrl;
 
-  // 2. Web content. Dev URL wins; otherwise start the Next standalone sidecar.
+  // 3. Web content. Dev URL wins; otherwise start the Next standalone sidecar.
   const devUrl = process.env.ANVILNOTE_WEB_DEV_URL;
   if (!app.isPackaged && devUrl) {
     appUrl = devUrl;
@@ -259,6 +276,7 @@ app.on("window-all-closed", () => app.quit());
 function stopSidecars(): void {
   stopLocalWeb();
   stopLocalApi();
+  stopLocalFuncs();
 }
 app.on("before-quit", stopSidecars);
 process.on("exit", stopSidecars);

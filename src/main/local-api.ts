@@ -60,6 +60,7 @@ function buildChildEnv(
   port: number,
   webOrigin: string | undefined,
   desktopTrustToken: string,
+  funcsBaseUrl: string | undefined,
 ): NodeJS.ProcessEnv {
   const typstPath = resolveTypstBinaryPath();
   const fontDir = resolveBundledFontDir();
@@ -95,10 +96,13 @@ function buildChildEnv(
     // Same contract for the docx exporter sidecar (Tiptap JSON -> .docx via
     // Pandoc). See anvilnote-docx-exporter/README.md.
     ANVILNOTE_DOCX_EXPORTER_PATH: runtimePaths.docxExporter(),
-    // Same contract for the function-plot chart compiler. Reuses the same
-    // bundled typst binary + TYPST_PACKAGE_CACHE_PATH set below — no
-    // charts-specific binary wiring needed.
+    // Same contract for the stats-chart compiler (bar/pie/scatter/stacked).
+    // Unrelated to function-plot despite the similar-sounding name.
     ANVILNOTE_CHARTS_PATH: runtimePaths.charts(),
+    // The function-plot feature's sidecar (sympy + pgfplots/TikZ + tectonic).
+    // A URL, not a spawned CLI path, because it's a persistent HTTP service —
+    // see local-funcs.ts.
+    ...(funcsBaseUrl ? { ANVILNOTE_FUNCS_URL: funcsBaseUrl } : {}),
     // The docx exporter reads PANDOC_BIN.
     PANDOC_BIN: pandocPath,
     // The renderer reads TYPST_BIN; also expose ANVILNOTE_TYPST_PATH for parity.
@@ -140,6 +144,7 @@ export async function startLocalApi(
   port: number,
   webOrigin?: string,
   desktopTrustToken?: string,
+  funcsBaseUrl?: string,
 ): Promise<LocalApi> {
   if (current) return current;
 
@@ -147,7 +152,7 @@ export async function startLocalApi(
   if (!desktopTrustToken || desktopTrustToken.length < 32) {
     throw new Error("Desktop API trust token is unavailable.");
   }
-  const env = buildChildEnv(port, webOrigin, desktopTrustToken);
+  const env = buildChildEnv(port, webOrigin, desktopTrustToken, funcsBaseUrl);
 
   log.info(`starting API sidecar: ${entry} on ${HOST}:${port}`);
   const child = spawn(SIDECAR_EXEC_PATH, [entry], {
