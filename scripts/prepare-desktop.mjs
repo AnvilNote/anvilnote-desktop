@@ -16,12 +16,14 @@ const steps = [
   "build-renderer.mjs",
   "build-docx-exporter.mjs",
   "build-charts.mjs",
+  "build-funcs.mjs",
   "copy-ai-writer.mjs",
   "copy-web.mjs",
   "copy-api.mjs",
   "copy-renderer.mjs",
   "copy-docx-exporter.mjs",
   "copy-charts.mjs",
+  "copy-funcs.mjs",
   "copy-resources.mjs",
 ];
 
