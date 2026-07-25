@@ -41,6 +41,7 @@ module.exports = {
     { from: "dist/app/fonts", to: "fonts" },
     { from: "dist/app/templates", to: "templates" },
     { from: "dist/app/typst-packages", to: "typst-packages" },
+    { from: "dist/app/tectonic-cache", to: "tectonic-cache" },
     { from: "dist/app/installer", to: "installer" },
     { from: "build/icon.png", to: "icon.png" },
   ],

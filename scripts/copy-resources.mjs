@@ -23,6 +23,7 @@ const items = [
   [path.join(c.repoRoot, "resources", "fonts"), "fonts"],
   [path.join(c.repoRoot, "resources", "templates"), "templates"],
   [path.join(c.repoRoot, "resources", "typst-packages"), "typst-packages"],
+  [path.join(c.repoRoot, "resources", "tectonic-cache"), "tectonic-cache"],
   [path.join(c.repoRoot, "installer"), "installer"],
 ];
 
