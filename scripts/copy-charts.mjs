@@ -1,8 +1,9 @@
 // Copy the charts CLI runtime into dist/app/charts: just the esbuild bundle
 // (dist/cli.cjs), no node_modules needed. Unlike docx-exporter (system
-// Pandoc), the charts CLI's `typst` binary + `@preview/simple-plot` package
-// are the SAME bundled ones anvilnote-renderer already uses (see
-// resources/typst-packages/preview/simple-plot/ and TYPST_PACKAGE_CACHE_PATH
+// Pandoc), the charts CLI's `typst` binary + the `@preview/cetz` and
+// `@preview/cetz-plot` packages its one remaining feature (stats-chart)
+// imports are the SAME bundled ones anvilnote-renderer already uses (see
+// resources/typst-packages/preview/cetz*/ and TYPST_PACKAGE_CACHE_PATH
 // wiring) — nothing charts-specific to stage beyond the CLI itself.
 
 import fs from "node:fs";
