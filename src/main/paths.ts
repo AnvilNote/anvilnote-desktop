@@ -44,6 +44,12 @@ export const runtimePaths = {
   // here makes Typst treat these as already-downloaded — no network access
   // needed at render time. See typst.ts's resolveBundledTypstPackageCacheDir.
   typstPackages: () => path.join(runtimeRoot(), "typst-packages"),
+  funcs: () => path.join(runtimeRoot(), "funcs"),
+  // Pre-warmed tectonic package cache (pgfplots, newtxtext/newtxmath,
+  // standalone, amsmath, amssymb + dependencies) — same offline-bundling
+  // shape as typstPackages above, pointed to via TECTONIC_CACHE_DIR so
+  // tectonic never needs network access at render time.
+  tectonicCache: () => path.join(runtimeRoot(), "tectonic-cache"),
 };
 
 // electron-builder generates the packaged app icon from build/icon.png but does
@@ -61,6 +67,7 @@ export const repoResources = {
   fonts: () => path.join(repoRoot, "resources", "fonts"),
   templates: () => path.join(repoRoot, "resources", "templates"),
   typstPackages: () => path.join(repoRoot, "resources", "typst-packages"),
+  tectonicCache: () => path.join(repoRoot, "resources", "tectonic-cache"),
 };
 
 // ─── User data (writable) ───────────────────────────────────────────────────
