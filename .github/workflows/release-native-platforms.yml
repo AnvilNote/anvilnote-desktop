@@ -222,10 +222,10 @@ jobs:
       - name: Assemble native Linux runtime
         working-directory: anvilnote-desktop
         run: |
-          pnpm prepare:desktop
           pnpm fetch:typst:linux
           pnpm fetch:pandoc:linux
           pnpm fetch:tectonic:target
+          pnpm prepare:desktop
           pnpm verify:funcs
           pnpm build:main
 
