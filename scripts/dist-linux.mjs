@@ -68,8 +68,8 @@ const inContainer = [
   "test -x node_modules/.bin/electron-builder",
   "node scripts/fetch-typst-linux.mjs",
   "node scripts/fetch-pandoc-linux.mjs",
+  "node scripts/stage-target-tools.mjs",
   "node scripts/fetch-tectonic-target.mjs",
-  "node scripts/verify-staged-funcs.mjs",
   // NOT `pnpm build:main`: running anything through the pnpm CLI again here
   // re-triggers its own dependency-status check, which decides the just-
   // crashed install above left node_modules "inconsistent" (pnpm's internal
@@ -90,6 +90,8 @@ for (const arch of archs) {
     // No --platform: the image is amd64-only. electron-builder cross-packages
     // arm64 from it; on Apple Silicon the amd64 container runs under emulation.
     "-e", `TARGET_ARCH=${arch}`,
+    "-e", "ANVILNOTE_BUILD_PLATFORM=linux",
+    "-e", `ANVILNOTE_BUILD_ARCH=${arch}`,
     // libuv's io_uring path is unreliable under QEMU's syscall translation —
     // it reproducibly crashes pnpm install with
     // "uv__io_poll: Assertion `errno == EEXIST' failed" partway through.

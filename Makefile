@@ -68,21 +68,16 @@ dist-mac-release: ## Build, notarize, staple, and verify macOS artifacts
 verify-mac: ## Verify signed and stapled macOS artifacts
 	$(PM) verify:mac
 
-dist-win: ## Build an unsigned Windows NSIS installer on Windows x64
-	node scripts/assert-native-target.mjs win32 x64
+dist-win: ## Build an unsigned Windows NSIS installer locally
 	$(PM) dist:win
 
-dist-linux: ## Build Linux assets through native GitHub runners
-	@echo "dist-linux cannot correctly build x64 and arm64 native sidecars on one host."
-	@echo "Use: make release-native TAG=v0.1.20"
-	@exit 1
+dist-linux: ## Build Linux deb and AppImage assets in Docker
+	$(PM) dist:linux
 
-dist-linux-x64: ## Build Linux deb and AppImage on Linux x64
-	node scripts/assert-native-target.mjs linux x64
+dist-linux-x64: ## Build Linux deb and AppImage for x64 in Docker
 	$(PM) dist:linux x64
 
-dist-linux-arm64: ## Build Linux deb and AppImage on Linux arm64
-	node scripts/assert-native-target.mjs linux arm64
+dist-linux-arm64: ## Build Linux deb and AppImage for arm64 in Docker
 	$(PM) dist:linux arm64
 
 release-native: ## Build and upload Windows and Linux assets using native runners

@@ -14,7 +14,6 @@ const nodeRepos = [
   ["anvilnote-docx-exporter", c.docxExporterDir],
   ["anvilnote-charts", c.chartsDir],
 ];
-const pythonRepos = [["anvilnote-funcs", c.funcsDir]];
 
 logStep("Checking sibling repos");
 let ok = true;
@@ -27,20 +26,6 @@ for (const [name, dir] of nodeRepos) {
   }
   if (!fs.existsSync(path.join(dir, "package.json"))) {
     console.error(`✖ ${name}: package.json not found in ${dir}`);
-    ok = false;
-    continue;
-  }
-  console.log(`✓ ${name}: ${dir}`);
-}
-
-for (const [name, dir] of pythonRepos) {
-  if (!fs.existsSync(dir)) {
-    console.error(`✖ ${name}: directory not found: ${dir}`);
-    ok = false;
-    continue;
-  }
-  if (!fs.existsSync(path.join(dir, "pyproject.toml"))) {
-    console.error(`✖ ${name}: pyproject.toml not found in ${dir}`);
     ok = false;
     continue;
   }

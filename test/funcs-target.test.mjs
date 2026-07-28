@@ -4,6 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import test from "node:test";
 import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
 
 import {
   assertFuncsBinaryTarget,
@@ -14,6 +15,7 @@ import {
 
 const require = createRequire(import.meta.url);
 const electronBuilderConfig = require("../electron-builder.config.cjs");
+const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 function writeFixture(buffer) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "anvilnote-funcs-target-"));
@@ -96,11 +98,27 @@ test("stages only a binary matching the requested target", () => {
   }
 });
 
-test("electron-builder packages the verified funcs sidecar", () => {
-  assert.ok(
+test("desktop release omits the dormant funcs sidecar", () => {
+  assert.equal(
     electronBuilderConfig.extraResources.some(
       (entry) => entry.from === "dist/app/funcs" && entry.to === "funcs",
     ),
-    "dist/app/funcs must be copied into the packaged Resources/funcs directory",
+    false,
+    "dormant funcs must not be copied into packaged resources",
   );
+
+  const prepare = fs.readFileSync(
+    path.join(repoRoot, "scripts/prepare-desktop.mjs"),
+    "utf8",
+  );
+  assert.doesNotMatch(prepare, /build-funcs|copy-funcs/u);
+
+  const workflow = fs.readFileSync(
+    path.join(repoRoot, ".github/workflows/release-native-platforms.yml"),
+    "utf8",
+  );
+  assert.doesNotMatch(workflow, /anvilnote-funcs|verify:funcs|Install funcs/u);
+
+  const main = fs.readFileSync(path.join(repoRoot, "src/main/main.ts"), "utf8");
+  assert.doesNotMatch(main, /startLocalFuncs|stopLocalFuncs|funcsPort/u);
 });

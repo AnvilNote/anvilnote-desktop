@@ -49,18 +49,21 @@ test("native release builds dependencies and fetches target tools before assembl
   );
 
   const windowsScript = packageJson.scripts["dist:win"];
-  assert.match(
-    windowsScript,
-    /electron-builder .* --publish never/u,
-    "Windows packaging must not compete with the explicit release upload step",
+  assert.equal(windowsScript, "node scripts/dist-windows.mjs");
+  const windowsBuild = fs.readFileSync(
+    path.join(repoRoot, "scripts/dist-windows.mjs"),
+    "utf8",
+  );
+  assert.match(windowsBuild, /ANVILNOTE_BUILD_PLATFORM\s*=\s*"win32"/u);
+  assert.match(windowsBuild, /ANVILNOTE_BUILD_ARCH\s*=\s*"x64"/u);
+  assert.match(windowsBuild, /"--publish",\s*"never"/u);
+  assert.ok(
+    windowsBuild.indexOf('"fetch:typst:windows"') <
+      windowsBuild.indexOf('"prepare:desktop"'),
   );
   assert.ok(
-    windowsScript.indexOf("pnpm fetch:typst:windows") <
-      windowsScript.indexOf("pnpm prepare:desktop"),
-  );
-  assert.ok(
-    windowsScript.indexOf("pnpm prepare:desktop") <
-      windowsScript.indexOf("pnpm fetch:tectonic:target"),
+    windowsBuild.indexOf('"prepare:desktop"') <
+      windowsBuild.indexOf('"fetch:tectonic:target"'),
   );
 
   for (const scriptName of [
@@ -75,20 +78,24 @@ test("native release builds dependencies and fetches target tools before assembl
   }
 });
 
-test("Makefile prevents cross-platform sidecars and exposes one native release command", () => {
+test("Makefile builds Windows and Linux locally", () => {
   const makefile = fs.readFileSync(path.join(repoRoot, "Makefile"), "utf8");
 
   assert.match(
     makefile,
-    /^dist-win:.*\n\tnode scripts\/assert-native-target\.mjs win32 x64$/mu,
+    /^dist-win:.*\n\t\$\(PM\) dist:win$/mu,
   );
   assert.match(
     makefile,
-    /^dist-linux-x64:.*\n\tnode scripts\/assert-native-target\.mjs linux x64$/mu,
+    /^dist-linux:.*\n\t\$\(PM\) dist:linux$/mu,
   );
   assert.match(
     makefile,
-    /^dist-linux-arm64:.*\n\tnode scripts\/assert-native-target\.mjs linux arm64$/mu,
+    /^dist-linux-x64:.*\n\t\$\(PM\) dist:linux x64$/mu,
+  );
+  assert.match(
+    makefile,
+    /^dist-linux-arm64:.*\n\t\$\(PM\) dist:linux arm64$/mu,
   );
   assert.match(makefile, /^release-native:/mu);
   assert.match(

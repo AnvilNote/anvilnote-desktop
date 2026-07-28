@@ -37,18 +37,20 @@ export function expectedBundledPandocPath(repoRoot, platform = process.platform,
 // resources/bin/pandoc/README.md) that would silently break once copied into
 // the packaged app.
 export function resolvePandocBuildSource(repoRoot, env = process.env) {
-  const bundled = expectedBundledPandocPath(repoRoot);
-  if (isExecutable(bundled)) {
+  const platform = env.ANVILNOTE_BUILD_PLATFORM ?? process.platform;
+  const arch = env.ANVILNOTE_BUILD_ARCH ?? process.arch;
+  const bundled = expectedBundledPandocPath(repoRoot, platform, arch);
+  if (isExecutable(bundled, platform)) {
     return { source: bundled, bundled, mode: "bundled" };
   }
 
   const override = env.ANVILNOTE_PANDOC_PATH;
-  if (override && isExecutable(override)) {
+  if (override && isExecutable(override, platform)) {
     return { source: override, bundled, mode: "env" };
   }
 
   throw new Error(
-    `Pandoc binary missing for build target ${bundledPlatformDir()}. ` +
+    `Pandoc binary missing for build target ${bundledPlatformDir(platform, arch)}. ` +
       `Expected ${bundled} — download the official portable release from ` +
       `https://github.com/jgm/pandoc/releases (pandoc-<ver>-<arch>-macOS.zip, ` +
       `NOT a Homebrew install, which is dynamically linked and won't run once ` +

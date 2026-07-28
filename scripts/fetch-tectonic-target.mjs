@@ -10,8 +10,8 @@ import {
 } from "./tectonic-resource.mjs";
 
 const VERSION = process.env.TECTONIC_VERSION ?? "0.16.9";
-const platform = process.platform;
-const arch = process.arch;
+const platform = process.env.ANVILNOTE_BUILD_PLATFORM ?? process.platform;
+const arch = process.env.ANVILNOTE_BUILD_ARCH ?? process.env.TARGET_ARCH ?? process.arch;
 const spec = tectonicReleaseSpec(platform, arch, VERSION);
 const c = config();
 const root = path.join(c.appDir, "bin", "tectonic");
@@ -52,5 +52,9 @@ if (override) {
 }
 
 if (platform !== "win32") fs.chmodSync(dest, 0o755);
-execFileSync(dest, ["--version"], { stdio: "inherit" });
+if (platform === process.platform && arch === process.arch) {
+  execFileSync(dest, ["--version"], { stdio: "inherit" });
+} else {
+  console.log(`  cross-build target ${platform}-${arch}; execution check deferred`);
+}
 console.log(`  staged Tectonic -> ${dest}`);

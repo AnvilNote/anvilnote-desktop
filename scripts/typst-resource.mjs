@@ -35,30 +35,34 @@ export function expectedBundledTypstPath(repoRoot, platform = process.platform, 
 }
 
 export function resolveTypstBuildSource(repoRoot, env = process.env) {
-  const bundled = expectedBundledTypstPath(repoRoot);
-  if (isExecutable(bundled)) {
+  const platform = env.ANVILNOTE_BUILD_PLATFORM ?? process.platform;
+  const arch = env.ANVILNOTE_BUILD_ARCH ?? process.arch;
+  const bundled = expectedBundledTypstPath(repoRoot, platform, arch);
+  if (isExecutable(bundled, platform)) {
     return { source: bundled, bundled, mode: "bundled" };
   }
 
   const override = env.ANVILNOTE_TYPST_PATH;
-  if (override && isExecutable(override)) {
+  if (override && isExecutable(override, platform)) {
     return { source: override, bundled, mode: "env" };
   }
 
-  try {
-    const which = execFileSync("which", ["typst"], {
-      encoding: "utf8",
-      env: { ...process.env, ...env },
-    }).trim();
-    if (which && isExecutable(which)) {
-      return { source: which, bundled, mode: "system" };
+  if (platform === process.platform && arch === process.arch) {
+    try {
+      const which = execFileSync("which", ["typst"], {
+        encoding: "utf8",
+        env: { ...process.env, ...env },
+      }).trim();
+      if (which && isExecutable(which, platform)) {
+        return { source: which, bundled, mode: "system" };
+      }
+    } catch {
+      // Fall through to the explicit error below.
     }
-  } catch {
-    // Fall through to the explicit error below.
   }
 
   throw new Error(
-    `Typst binary missing for build target ${bundledPlatformDir()}. ` +
+    `Typst binary missing for build target ${bundledPlatformDir(platform, arch)}. ` +
       `Expected ${bundled}, or set ANVILNOTE_TYPST_PATH to an executable Typst binary, ` +
       `or install Typst so \`which typst\` succeeds before packaging.`,
   );

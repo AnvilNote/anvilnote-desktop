@@ -30,6 +30,21 @@ test("resolveTypstBuildSource prefers bundled binary when staged", () => {
   assert.equal(resolved.source, bundled);
 });
 
+test("resolveTypstBuildSource honors an explicit cross-build target", () => {
+  const repoRoot = makeRepoRoot();
+  const bundled = expectedBundledTypstPath(repoRoot, "win32", "x64");
+  writeExecutable(bundled);
+
+  const resolved = resolveTypstBuildSource(repoRoot, {
+    ANVILNOTE_BUILD_PLATFORM: "win32",
+    ANVILNOTE_BUILD_ARCH: "x64",
+    PATH: "",
+  });
+
+  assert.equal(resolved.mode, "bundled");
+  assert.equal(resolved.source, bundled);
+});
+
 test("resolveTypstBuildSource falls back to ANVILNOTE_TYPST_PATH", () => {
   const repoRoot = makeRepoRoot();
   const override = path.join(repoRoot, "custom", "typst");
