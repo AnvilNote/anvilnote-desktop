@@ -12,7 +12,7 @@ const TARGETS = new Map([
   [
     "linux-x64",
     {
-      triple: "x86_64-unknown-linux-gnu",
+      triple: "x86_64-unknown-linux-musl",
       extension: "tar.gz",
       binary: "tectonic",
     },

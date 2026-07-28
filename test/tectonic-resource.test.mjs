@@ -16,7 +16,7 @@ test("maps Windows x64 to the official MSVC archive", () => {
 
 test("maps native Linux architectures to runnable release archives", () => {
   assert.deepEqual(tectonicReleaseSpec("linux", "x64", "0.16.9"), {
-    archive: "tectonic-0.16.9-x86_64-unknown-linux-gnu.tar.gz",
+    archive: "tectonic-0.16.9-x86_64-unknown-linux-musl.tar.gz",
     binary: "tectonic",
     platformDir: "linux-x64",
   });

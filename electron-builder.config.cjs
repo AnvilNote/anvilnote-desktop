@@ -117,6 +117,10 @@ module.exports = {
     executableName: "anvilnote",
   },
   deb: {
+    // xz peaks near 2 GiB and is prohibitively slow when electron-builder runs
+    // through x86 QEMU on Apple Silicon. gzip keeps local cross-platform
+    // releases within Colima's memory budget and still produces a standard deb.
+    compression: "gz",
     // Refresh the GTK icon cache so the app icon shows up immediately after
     // install instead of waiting for the next cache refresh.
     afterInstall: "build/deb-after-install.sh",

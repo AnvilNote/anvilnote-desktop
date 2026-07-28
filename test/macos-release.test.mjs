@@ -109,6 +109,11 @@ test("Linux package metadata uses the team maintainer address", () => {
   assert.equal(config.linux.maintainer, "AnvilNote <team@anvilnote.org>");
 });
 
+test("Linux deb uses low-memory compression for local cross-builds", () => {
+  const config = require(path.join(repoRoot, "electron-builder.config.cjs"));
+  assert.equal(config.deb.compression, "gz");
+});
+
 test("all-platform publishing uses the notarized macOS release command", () => {
   const script = fs.readFileSync(
     path.join(repoRoot, "scripts", "release-all.sh"),
