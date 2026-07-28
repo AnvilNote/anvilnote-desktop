@@ -37,6 +37,7 @@ jobs:
         with:
           repository: AnvilNote/anvilnote-renderer
           path: anvilnote-renderer
+          lfs: true
       - uses: actions/checkout@v4
         with:
           repository: AnvilNote/anvilnote-docx-exporter
@@ -165,6 +166,7 @@ jobs:
         with:
           repository: AnvilNote/anvilnote-renderer
           path: anvilnote-renderer
+          lfs: true
       - uses: actions/checkout@v4
         with:
           repository: AnvilNote/anvilnote-docx-exporter
