@@ -60,6 +60,15 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Build AI Writer dependency
+        working-directory: anvilnote-ai-writer
+        shell: pwsh
+        run: |
+          pnpm install --frozen-lockfile
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          pnpm build
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
       - name: Install Node dependencies
         shell: pwsh
         run: |
@@ -67,7 +76,6 @@ jobs:
             "anvilnote-desktop",
             "anvilnote-web",
             "anvilnote-api",
-            "anvilnote-ai-writer",
             "anvilnote-renderer",
             "anvilnote-docx-exporter",
             "anvilnote-charts"
@@ -186,13 +194,18 @@ jobs:
           sudo apt-get install -y fakeroot rpm libarchive-tools
           python -m pip install poetry
 
+      - name: Build AI Writer dependency
+        working-directory: anvilnote-ai-writer
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
       - name: Install Node dependencies
         run: |
           for repo in \
             anvilnote-desktop \
             anvilnote-web \
             anvilnote-api \
-            anvilnote-ai-writer \
             anvilnote-renderer \
             anvilnote-docx-exporter \
             anvilnote-charts
