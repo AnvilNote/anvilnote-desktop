@@ -224,8 +224,8 @@ jobs:
         run: |
           pnpm fetch:typst:linux
           pnpm fetch:pandoc:linux
-          pnpm fetch:tectonic:target
           pnpm prepare:desktop
+          pnpm fetch:tectonic:target
           pnpm verify:funcs
           pnpm build:main
 

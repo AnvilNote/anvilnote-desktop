@@ -1,5 +1,5 @@
-// Fetch the pinned Pandoc binary for the current Linux platform/arch and stage
-// it straight into the assembled runtime tree (dist/app/bin/pandoc/linux-<arch>).
+// Fetch the pinned Pandoc binary for the current Linux platform/arch and cache
+// it as a build input (resources/bin/pandoc/linux-<arch>).
 //
 // This is meant to run *inside* the Linux build container (see
 // scripts/dist-linux.mjs), right after fetch-typst-linux.mjs. The host's
@@ -33,13 +33,12 @@ if (!SUPPORTED.has(arch)) fail(`Unsupported Linux arch: ${arch} (expected x64 or
 const assetArch = arch === "x64" ? "amd64" : "arm64";
 
 const c = config();
-const pandocRoot = path.join(c.appDir, "bin", "pandoc");
+const pandocRoot = path.join(c.repoRoot, "resources", "bin", "pandoc");
 const destDir = path.join(pandocRoot, `linux-${arch}`);
 const dest = path.join(destDir, "pandoc");
 
-// Ship exactly one Pandoc binary per package: clear any other platform's dir
-// (e.g. the macOS one staged by the host's prepare:desktop).
-fs.rmSync(pandocRoot, { recursive: true, force: true });
+// Refresh only this target. copy-resources selects exactly one target later.
+fs.rmSync(destDir, { recursive: true, force: true });
 ensureDir(destDir);
 
 const override = process.env.ANVILNOTE_PANDOC_PATH;

@@ -1,5 +1,5 @@
-// Fetch the pinned Pandoc binary for Windows x64 and stage it straight into
-// the assembled runtime tree (dist/app/bin/pandoc/win32-x64).
+// Fetch the pinned Pandoc binary for Windows x64 and cache it as a build input
+// (resources/bin/pandoc/win32-x64).
 //
 // Unlike fetch-pandoc-linux.mjs, this does not require running on Windows:
 // the Pandoc Windows release is a plain zip, so it can be fetched and
@@ -18,13 +18,12 @@ import { config, ensureDir, logStep, fail } from "./load-env.mjs";
 const PANDOC_VERSION = process.env.PANDOC_VERSION ?? "3.10";
 
 const c = config();
-const pandocRoot = path.join(c.appDir, "bin", "pandoc");
+const pandocRoot = path.join(c.repoRoot, "resources", "bin", "pandoc");
 const destDir = path.join(pandocRoot, "win32-x64");
 const dest = path.join(destDir, "pandoc.exe");
 
-// Ship exactly one Pandoc binary per package: clear any other platform's dir
-// (e.g. the macOS one staged by the host's prepare:desktop).
-fs.rmSync(pandocRoot, { recursive: true, force: true });
+// Refresh only this target. copy-resources selects exactly one target later.
+fs.rmSync(destDir, { recursive: true, force: true });
 ensureDir(destDir);
 
 const override = process.env.ANVILNOTE_PANDOC_PATH;

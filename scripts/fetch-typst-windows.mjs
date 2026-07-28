@@ -1,5 +1,5 @@
-// Fetch the pinned Typst binary for Windows x64 and stage it straight into the
-// assembled runtime tree (dist/app/bin/typst/win32-x64).
+// Fetch the pinned Typst binary for Windows x64 and cache it as a build input
+// (resources/bin/typst/win32-x64).
 //
 // Unlike fetch-typst-linux.mjs, this does not require running on Windows: the
 // Typst release is a plain zip, so it can be fetched and extracted on any host
@@ -19,13 +19,12 @@ const TYPST_VERSION = process.env.TYPST_VERSION ?? "0.14.2";
 const TRIPLE = "x86_64-pc-windows-msvc";
 
 const c = config();
-const typstRoot = path.join(c.appDir, "bin", "typst");
+const typstRoot = path.join(c.repoRoot, "resources", "bin", "typst");
 const destDir = path.join(typstRoot, "win32-x64");
 const dest = path.join(destDir, "typst.exe");
 
-// Ship exactly one Typst binary per package: clear any other platform's dir
-// (e.g. the macOS one staged by the host's prepare:desktop).
-fs.rmSync(typstRoot, { recursive: true, force: true });
+// Refresh only this target. copy-resources selects exactly one target later.
+fs.rmSync(destDir, { recursive: true, force: true });
 ensureDir(destDir);
 
 const override = process.env.ANVILNOTE_TYPST_PATH;

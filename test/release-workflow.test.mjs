@@ -33,10 +33,51 @@ test("native release builds dependencies and fetches target tools before assembl
     linuxAssembly.indexOf("pnpm fetch:typst:linux") <
       linuxAssembly.indexOf("pnpm prepare:desktop"),
   );
+  assert.ok(
+    linuxAssembly.indexOf("pnpm prepare:desktop") <
+      linuxAssembly.indexOf("pnpm fetch:tectonic:target"),
+  );
 
   const windowsScript = packageJson.scripts["dist:win"];
   assert.ok(
     windowsScript.indexOf("pnpm fetch:typst:windows") <
       windowsScript.indexOf("pnpm prepare:desktop"),
+  );
+  assert.ok(
+    windowsScript.indexOf("pnpm prepare:desktop") <
+      windowsScript.indexOf("pnpm fetch:tectonic:target"),
+  );
+
+  for (const scriptName of [
+    "fetch-typst-linux.mjs",
+    "fetch-typst-windows.mjs",
+    "fetch-pandoc-linux.mjs",
+    "fetch-pandoc-windows.mjs",
+  ]) {
+    const script = fs.readFileSync(path.join(repoRoot, "scripts", scriptName), "utf8");
+    assert.match(script, /c\.repoRoot,\s*"resources",\s*"bin"/u);
+    assert.doesNotMatch(script, /path\.join\(c\.appDir,\s*"bin"/u);
+  }
+});
+
+test("Makefile prevents cross-platform sidecars and exposes one native release command", () => {
+  const makefile = fs.readFileSync(path.join(repoRoot, "Makefile"), "utf8");
+
+  assert.match(
+    makefile,
+    /^dist-win:.*\n\tnode scripts\/assert-native-target\.mjs win32 x64$/mu,
+  );
+  assert.match(
+    makefile,
+    /^dist-linux-x64:.*\n\tnode scripts\/assert-native-target\.mjs linux x64$/mu,
+  );
+  assert.match(
+    makefile,
+    /^dist-linux-arm64:.*\n\tnode scripts\/assert-native-target\.mjs linux arm64$/mu,
+  );
+  assert.match(makefile, /^release-native:/mu);
+  assert.match(
+    makefile,
+    /gh workflow run release-native-platforms\.yml -f tag=\$\(TAG\)/u,
   );
 });

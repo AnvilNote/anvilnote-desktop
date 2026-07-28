@@ -70,14 +70,26 @@ function assertFontsArePulled(dir) {
 }
 
 const typst = resolveTypstBuildSource(c.repoRoot);
-const destTypst = path.join(c.appDir, "bin", "typst", path.basename(path.dirname(typst.bundled)), "typst");
+const typstDestRoot = path.join(c.appDir, "bin", "typst");
+fs.rmSync(typstDestRoot, { recursive: true, force: true });
+const destTypst = path.join(
+  typstDestRoot,
+  path.basename(path.dirname(typst.bundled)),
+  path.basename(typst.bundled),
+);
 ensureDir(path.dirname(destTypst));
 fs.cpSync(typst.source, destTypst);
 fs.chmodSync(destTypst, 0o755);
 console.log(`  staged Typst (${typst.mode}) -> ${destTypst}`);
 
 const pandoc = resolvePandocBuildSource(c.repoRoot);
-const destPandoc = path.join(c.appDir, "bin", "pandoc", path.basename(path.dirname(pandoc.bundled)), "pandoc");
+const pandocDestRoot = path.join(c.appDir, "bin", "pandoc");
+fs.rmSync(pandocDestRoot, { recursive: true, force: true });
+const destPandoc = path.join(
+  pandocDestRoot,
+  path.basename(path.dirname(pandoc.bundled)),
+  path.basename(pandoc.bundled),
+);
 ensureDir(path.dirname(destPandoc));
 fs.cpSync(pandoc.source, destPandoc);
 fs.chmodSync(destPandoc, 0o755);

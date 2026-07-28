@@ -6,7 +6,7 @@
 PM := pnpm
 
 # Treat targets as commands
-.PHONY: help install check-repos dev dev-hot build prepare pack dist-dmg dist-pkg dist-mac dist-mac-release verify-mac dist-win dist-linux dist-linux-x64 dist-linux-arm64 typecheck check test clean reset release-all
+.PHONY: help install check-repos dev dev-hot build prepare pack dist-dmg dist-pkg dist-mac dist-mac-release verify-mac dist-win dist-linux dist-linux-x64 dist-linux-arm64 release-native typecheck check test clean reset release-all
 
 # Show help by default
 .DEFAULT_GOAL := help
@@ -68,17 +68,30 @@ dist-mac-release: ## Build, notarize, staple, and verify macOS artifacts
 verify-mac: ## Verify signed and stapled macOS artifacts
 	$(PM) verify:mac
 
-dist-win: ## Build an unsigned Windows NSIS installer for x64
+dist-win: ## Build an unsigned Windows NSIS installer on Windows x64
+	node scripts/assert-native-target.mjs win32 x64
 	$(PM) dist:win
 
-dist-linux: ## Build Linux deb and AppImage for x64 and arm64 in Docker
-	$(PM) dist:linux
+dist-linux: ## Build Linux assets through native GitHub runners
+	@echo "dist-linux cannot correctly build x64 and arm64 native sidecars on one host."
+	@echo "Use: make release-native TAG=v0.1.20"
+	@exit 1
 
-dist-linux-x64: ## Build Linux deb and AppImage for x64 only
+dist-linux-x64: ## Build Linux deb and AppImage on Linux x64
+	node scripts/assert-native-target.mjs linux x64
 	$(PM) dist:linux x64
 
-dist-linux-arm64: ## Build Linux deb and AppImage for arm64 only
+dist-linux-arm64: ## Build Linux deb and AppImage on Linux arm64
+	node scripts/assert-native-target.mjs linux arm64
 	$(PM) dist:linux arm64
+
+release-native: ## Build and upload Windows and Linux assets using native runners
+	@test -n "$(TAG)" || { echo "TAG is required, e.g. make release-native TAG=v0.1.20"; exit 1; }
+	@command -v gh >/dev/null || { echo "gh CLI not found."; exit 1; }
+	@run_url="$$(gh workflow run release-native-platforms.yml -f tag=$(TAG))"; \
+	echo "$$run_url"; \
+	run_id="$${run_url##*/}"; \
+	gh run watch "$$run_id" --exit-status
 
 typecheck: ## Run the TypeScript compiler in no-emit mode
 	$(PM) exec tsc --noEmit -p tsconfig.json
