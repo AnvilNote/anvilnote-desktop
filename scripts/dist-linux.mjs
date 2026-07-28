@@ -68,6 +68,8 @@ const inContainer = [
   "test -x node_modules/.bin/electron-builder",
   "node scripts/fetch-typst-linux.mjs",
   "node scripts/fetch-pandoc-linux.mjs",
+  "node scripts/fetch-tectonic-target.mjs",
+  "node scripts/verify-staged-funcs.mjs",
   // NOT `pnpm build:main`: running anything through the pnpm CLI again here
   // re-triggers its own dependency-status check, which decides the just-
   // crashed install above left node_modules "inconsistent" (pnpm's internal

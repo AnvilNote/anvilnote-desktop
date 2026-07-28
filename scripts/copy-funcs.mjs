@@ -7,23 +7,29 @@
 // only needs TECTONIC_BIN pointed at it via env, set by local-funcs.ts at
 // spawn time.
 
-import fs from "node:fs";
 import path from "node:path";
-import { config, ensureDir, fail, logStep } from "./load-env.mjs";
+import { config, fail, logStep } from "./load-env.mjs";
+import { funcsBinaryName, stageFuncsBinary } from "./funcs-target.mjs";
 
 const c = config();
 logStep("Copying funcs runtime -> dist/app/funcs");
 
-const binName = process.platform === "win32" ? "anvilnote-funcs.exe" : "anvilnote-funcs";
+const binName = funcsBinaryName(process.platform);
 const builtBinary = path.join(c.funcsDir, c.funcsDist, binName);
-if (!fs.existsSync(builtBinary)) {
-  fail(`funcs build not found at ${builtBinary}. Run \`pnpm build:funcs\` first.`);
+if (!path.isAbsolute(builtBinary)) {
+  fail(`funcs build path must be absolute: ${builtBinary}`);
 }
-
-const dest = path.join(c.appDir, "funcs");
-fs.rmSync(dest, { recursive: true, force: true });
-ensureDir(dest);
-fs.copyFileSync(builtBinary, path.join(dest, binName));
-fs.chmodSync(path.join(dest, binName), 0o755);
-
-console.log(`\nfuncs executable staged at dist/app/funcs/${binName}.`);
+try {
+  const staged = stageFuncsBinary({
+    source: builtBinary,
+    appDir: c.appDir,
+    platform: process.platform,
+    arch: process.arch,
+  });
+  console.log(`\nfuncs executable staged and verified at ${staged}.`);
+} catch (error) {
+  if (error?.code === "ENOENT") {
+    fail(`funcs build not found at ${builtBinary}. Run \`pnpm prepare:desktop\` first.`);
+  }
+  throw error;
+}

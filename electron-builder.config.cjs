@@ -37,6 +37,7 @@ module.exports = {
     { from: "dist/app/renderer", to: "renderer" },
     { from: "dist/app/docx-exporter", to: "docx-exporter" },
     { from: "dist/app/charts", to: "charts" },
+    { from: "dist/app/funcs", to: "funcs" },
     { from: "dist/app/bin", to: "bin" },
     { from: "dist/app/fonts", to: "fonts" },
     { from: "dist/app/templates", to: "templates" },

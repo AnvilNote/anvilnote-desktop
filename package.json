@@ -41,7 +41,9 @@
     "dist:linux": "node scripts/dist-linux.mjs",
     "fetch:typst:windows": "node scripts/fetch-typst-windows.mjs",
     "fetch:pandoc:windows": "node scripts/fetch-pandoc-windows.mjs",
-    "dist:win": "pnpm prepare:desktop && pnpm fetch:typst:windows && pnpm fetch:pandoc:windows && pnpm build:main && electron-builder --win nsis --x64 --config electron-builder.config.cjs"
+    "fetch:tectonic:target": "node scripts/fetch-tectonic-target.mjs",
+    "verify:funcs": "node scripts/verify-staged-funcs.mjs",
+    "dist:win": "pnpm prepare:desktop && pnpm fetch:typst:windows && pnpm fetch:pandoc:windows && pnpm fetch:tectonic:target && pnpm verify:funcs && pnpm build:main && electron-builder --win nsis --x64 --config electron-builder.config.cjs"
   },
   "dependencies": {
     "@anvilnote/ai-writer": "file:../anvilnote-ai-writer",
