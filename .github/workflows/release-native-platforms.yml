@@ -231,7 +231,12 @@ jobs:
 
       - name: Build Linux packages
         working-directory: anvilnote-desktop
-        run: pnpm exec electron-builder --linux AppImage deb --${{ matrix.arch }} --config electron-builder.config.cjs
+        run: |
+          if [ "${{ matrix.arch }}" = "x64" ]; then
+            pnpm exec electron-builder --linux AppImage deb --x64 --config electron-builder.config.cjs --publish never
+          else
+            pnpm exec electron-builder --linux AppImage --arm64 --config electron-builder.config.cjs --publish never
+          fi
 
       - name: Verify packaged funcs sidecar and health endpoint
         working-directory: anvilnote-desktop
@@ -253,4 +258,9 @@ jobs:
 
       - name: Upload Linux assets
         working-directory: anvilnote-desktop
-        run: gh release upload "$RELEASE_TAG" release/*.AppImage release/*.deb --clobber
+        run: |
+          if [ "${{ matrix.arch }}" = "x64" ]; then
+            gh release upload "$RELEASE_TAG" release/*.AppImage release/*.deb --clobber
+          else
+            gh release upload "$RELEASE_TAG" release/*.AppImage --clobber
+          fi

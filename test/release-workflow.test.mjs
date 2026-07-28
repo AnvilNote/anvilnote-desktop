@@ -37,8 +37,23 @@ test("native release builds dependencies and fetches target tools before assembl
     linuxAssembly.indexOf("pnpm prepare:desktop") <
       linuxAssembly.indexOf("pnpm fetch:tectonic:target"),
   );
+  assert.match(
+    workflow,
+    /if \[ "\$\{\{ matrix\.arch \}\}" = "x64" \]; then[\s\S]*?electron-builder --linux AppImage deb --x64[\s\S]*?else[\s\S]*?electron-builder --linux AppImage --arm64/u,
+    "arm64 must skip electron-builder's x86-only FPM deb packager",
+  );
+  assert.match(
+    workflow,
+    /if \[ "\$\{\{ matrix\.arch \}\}" = "x64" \]; then[\s\S]*?gh release upload "\$RELEASE_TAG" release\/\*\.AppImage release\/\*\.deb[\s\S]*?else[\s\S]*?gh release upload "\$RELEASE_TAG" release\/\*\.AppImage/u,
+    "arm64 upload must not require a deb artifact",
+  );
 
   const windowsScript = packageJson.scripts["dist:win"];
+  assert.match(
+    windowsScript,
+    /electron-builder .* --publish never/u,
+    "Windows packaging must not compete with the explicit release upload step",
+  );
   assert.ok(
     windowsScript.indexOf("pnpm fetch:typst:windows") <
       windowsScript.indexOf("pnpm prepare:desktop"),
