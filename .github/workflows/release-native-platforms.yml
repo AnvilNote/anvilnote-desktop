@@ -59,7 +59,7 @@ jobs:
       # before this job ever reaches the actual Windows build step). uv
       # manages its own Python install on demand, so no separate
       # actions/setup-python step is needed here.
-      - uses: astral-sh/setup-uv@v9
+      - uses: astral-sh/setup-uv@v9.0.0
 
       - name: Build AI Writer dependency
         working-directory: anvilnote-ai-writer
@@ -154,7 +154,7 @@ jobs:
       # before this job ever reaches "Assemble native Linux runtime", which
       # is what actually needs it). uv manages its own Python install on
       # demand, so no separate actions/setup-python step is needed here.
-      - uses: astral-sh/setup-uv@v9
+      - uses: astral-sh/setup-uv@v9.0.0
 
       - name: Install packaging tools
         run: |
