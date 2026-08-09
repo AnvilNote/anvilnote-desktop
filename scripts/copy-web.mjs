@@ -53,6 +53,20 @@ if (fs.existsSync(staticDir)) {
 const publicDir = path.join(c.webDir, "public");
 if (fs.existsSync(publicDir)) copyInto(publicDir, dest, "public");
 
+// 3.5. src/content/ -- source files read via fs at runtime (e.g. the
+// changelog's per-locale Markdown, read.server.ts), not statically imported,
+// so Next's own output:"standalone" file tracer has no way to know about
+// them and never includes them in .next/standalone. Copied to the same
+// src/content path the runtime code resolves relative to process.cwd()
+// (= dest, since server.js runs from here) -- confirmed via a real packaged
+// build that omitting this crashes the whole locale layout with ENOENT.
+const contentDir = path.join(c.webDir, "src", "content");
+if (fs.existsSync(contentDir)) {
+  copyInto(contentDir, path.join(dest, "src"), "content");
+} else {
+  console.warn(`  warning: ${contentDir} not found (no src/content to stage?)`);
+}
+
 // 4. Production node_modules (hoisted so electron-builder signs real files).
 const lock = path.join(c.webDir, "pnpm-lock.yaml");
 if (!fs.existsSync(lock)) {

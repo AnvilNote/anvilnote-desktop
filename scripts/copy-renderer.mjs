@@ -27,6 +27,13 @@ copyInto(path.join(c.rendererDir, "package.json"), dest, "package.json");
 const templates = path.join(c.rendererDir, "templates");
 if (fs.existsSync(templates)) copyInto(templates, dest, "templates");
 
+// Bundled assets (e.g. the default watermark PNG) -- resolveFromRendererRoot
+// resolves against process.cwd(), which the main process sets to this dest
+// dir when spawning dist/cli.js, same as templates/ above. Missing this
+// caused ENOENT on watermark-default.png in the packaged app.
+const assets = path.join(c.rendererDir, "assets");
+if (fs.existsSync(assets)) copyInto(assets, dest, "assets");
+
 console.log(
   "\nrenderer staged. dist/cli.js is the esbuild bundle (build:desktop), so no " +
     "node_modules are needed at runtime; templates are copied alongside.",
