@@ -33,6 +33,25 @@ const { autoUpdater } = electronUpdaterPkg;
 const log = createLogger("main");
 const moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
+// Without this, nothing stops a second launch (double-clicked Dock icon,
+// clicking the app again while it's still starting up, a stray relaunch)
+// from running alongside the first. Both instances try to bind the SAME
+// fixed API sidecar port (DEFAULT_API_PORT below) — the second one always
+// loses that race, startLocalApi's own retry/timeout loop burns up to ~90s
+// failing to bind it, bootstrap()'s catch swallows the error and opens a
+// window anyway (see that function's own comment: the API sidecar is
+// "best-effort" so a window still opens while pieces are missing) — so the
+// user gets a second, fully broken window sitting on top of (or behind) the
+// first, perfectly working one. That's this app's actual "server dies on
+// launch, relaunching fixes it" bug: the "fix" was never a restart, it was
+// closing the broken duplicate and returning to the instance that had been
+// fine the whole time. Must be requested before any other startup work —
+// if a second instance loses the race, it should quit immediately, not
+// spend time on window creation, sidecar spawning, etc. first.
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+}
+
 // AppImage has no install step, so nothing can chown/chmod chrome-sandbox to
 // root:4755 the way the .deb's postinst script does (see
 // build/deb-after-install.sh) — running it as a regular user aborts with
@@ -249,6 +268,16 @@ app.whenReady().then(bootstrap).catch((err) => {
 
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
+});
+
+// Fires on the FIRST (lock-holding) instance whenever a later launch
+// attempt loses the requestSingleInstanceLock() race above and quits — the
+// user's actual intent in that case is "bring the app to the front", not
+// "silently do nothing while a window they can't find sits there focused".
+app.on("second-instance", () => {
+  if (!mainWindow) return;
+  if (mainWindow.isMinimized()) mainWindow.restore();
+  mainWindow.focus();
 });
 
 // Quit on all windows closed (including macOS) so the API sidecar is always torn

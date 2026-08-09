@@ -27,7 +27,12 @@ import { resolveSidecarExecPath } from "./runtime-config.js";
 const log = createLogger("local-api");
 
 const HOST = "127.0.0.1";
-const STARTUP_TIMEOUT_MS = 15_000;
+// First-run antivirus scanning of the unpacked node_modules tree (esp. on an
+// unsigned Windows build) can stall the sidecar's own require() well past a
+// short timeout even though it's not actually hung — so this is generous,
+// and startLocalApi retries instead of giving up on the first miss.
+const STARTUP_TIMEOUT_MS = 30_000;
+const STARTUP_MAX_ATTEMPTS = 3;
 const electronProcess = process as NodeJS.Process & { helperExecPath?: string };
 const SIDECAR_EXEC_PATH = resolveSidecarExecPath({
   execPath: process.execPath,
@@ -140,6 +145,33 @@ function waitForPort(port: number, timeoutMs: number): Promise<void> {
   });
 }
 
+/** One spawn-and-wait attempt. Kills the child and rethrows on timeout. */
+function spawnAndWait(
+  entry: string,
+  env: NodeJS.ProcessEnv,
+  port: number,
+): Promise<ChildProcess> {
+  const child = spawn(SIDECAR_EXEC_PATH, [entry], {
+    cwd: runtimePaths.api(),
+    env,
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+
+  child.stdout?.on("data", (b: Buffer) => log.info(`[api] ${b.toString().trimEnd()}`));
+  child.stderr?.on("data", (b: Buffer) => log.warn(`[api] ${b.toString().trimEnd()}`));
+  child.on("exit", (code, signal) => {
+    log.warn(`API sidecar exited (code=${code} signal=${signal})`);
+    if (current?.child === child) current = null;
+  });
+
+  return waitForPort(port, STARTUP_TIMEOUT_MS)
+    .then(() => child)
+    .catch((err) => {
+      child.kill("SIGKILL");
+      throw err;
+    });
+}
+
 export async function startLocalApi(
   port: number,
   webOrigin?: string,
@@ -154,30 +186,24 @@ export async function startLocalApi(
   }
   const env = buildChildEnv(port, webOrigin, desktopTrustToken, funcsBaseUrl);
 
-  log.info(`starting API sidecar: ${entry} on ${HOST}:${port}`);
-  const child = spawn(SIDECAR_EXEC_PATH, [entry], {
-    cwd: runtimePaths.api(),
-    env,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
-  child.stdout?.on("data", (b: Buffer) => log.info(`[api] ${b.toString().trimEnd()}`));
-  child.stderr?.on("data", (b: Buffer) => log.warn(`[api] ${b.toString().trimEnd()}`));
-  child.on("exit", (code, signal) => {
-    log.warn(`API sidecar exited (code=${code} signal=${signal})`);
-    if (current?.child === child) current = null;
-  });
-
-  try {
-    await waitForPort(port, STARTUP_TIMEOUT_MS);
-  } catch (err) {
-    child.kill("SIGKILL");
-    throw err;
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= STARTUP_MAX_ATTEMPTS; attempt += 1) {
+    log.info(`starting API sidecar (attempt ${attempt}/${STARTUP_MAX_ATTEMPTS}): ${entry} on ${HOST}:${port}`);
+    try {
+      const child = await spawnAndWait(entry, env, port);
+      current = { child, host: HOST, port, baseUrl: `http://${HOST}:${port}` };
+      log.info(`API sidecar ready at ${current.baseUrl}`);
+      return current;
+    } catch (err) {
+      lastErr = err;
+      log.warn(
+        `API sidecar attempt ${attempt}/${STARTUP_MAX_ATTEMPTS} failed: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
+    }
   }
-
-  current = { child, host: HOST, port, baseUrl: `http://${HOST}:${port}` };
-  log.info(`API sidecar ready at ${current.baseUrl}`);
-  return current;
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }
 
 /** Kill the sidecar. Safe to call multiple times / when not started. */

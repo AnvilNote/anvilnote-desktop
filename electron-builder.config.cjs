@@ -90,6 +90,9 @@ module.exports = {
   nsis: {
     oneClick: false,
     allowToChangeInstallationDirectory: true,
+    // Shows the file-by-file install log instead of a bare progress bar —
+    // see build/installer.nsh for why.
+    include: "build/installer.nsh",
   },
   linux: {
     // Targets are produced one arch at a time by scripts/dist-linux.mjs, which
