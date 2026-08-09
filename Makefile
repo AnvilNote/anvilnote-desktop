@@ -6,7 +6,7 @@
 PM := pnpm
 
 # Treat targets as commands
-.PHONY: help install check-repos dev dev-hot build prepare pack dist-dmg dist-pkg dist-mac dist-mac-release verify-mac dist-win dist-linux dist-linux-x64 dist-linux-arm64 release-native typecheck check test clean reset release-all
+.PHONY: help install check-repos dev dev-hot build prepare pack dist-dmg dist-pkg dist-mac dist-mac-release verify-mac dist-win dist-linux dist-linux-x64 dist-linux-arm64 dist-linux-native release-native typecheck check test clean reset release-all
 
 # Show help by default
 .DEFAULT_GOAL := help
@@ -79,6 +79,9 @@ dist-linux-x64: ## Build Linux deb and AppImage for x64 in Docker
 
 dist-linux-arm64: ## Build Linux deb and AppImage for arm64 in Docker
 	$(PM) dist:linux arm64
+
+dist-linux-native: ## Build Linux deb and AppImage natively -- run this ON a real Linux machine, not via Docker
+	$(PM) dist:linux:native
 
 release-native: ## Build and upload Windows and Linux assets using native runners
 	@test -n "$(TAG)" || { echo "TAG is required, e.g. make release-native TAG=v0.1.20"; exit 1; }

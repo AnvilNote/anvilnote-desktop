@@ -52,6 +52,14 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 11.9.0
+      # anvilnote-charts (below) is a pure-Python/uv project, not a Node
+      # package — it has no package.json, so it's deliberately excluded from
+      # the "Install Node dependencies" repo loop just below (a bare `pnpm
+      # install` against it fails immediately with ERR_PNPM_NO_PKG_MANIFEST,
+      # before this job ever reaches the actual Windows build step). uv
+      # manages its own Python install on demand, so no separate
+      # actions/setup-python step is needed here.
+      - uses: astral-sh/setup-uv@v9
 
       - name: Build AI Writer dependency
         working-directory: anvilnote-ai-writer
@@ -70,8 +78,7 @@ jobs:
             "anvilnote-web",
             "anvilnote-api",
             "anvilnote-renderer",
-            "anvilnote-docx-exporter",
-            "anvilnote-charts"
+            "anvilnote-docx-exporter"
           )
           foreach ($repo in $repos) {
             Push-Location $repo
@@ -140,6 +147,14 @@ jobs:
       - uses: pnpm/action-setup@v4
         with:
           version: 11.9.0
+      # anvilnote-charts (below) is a pure-Python/uv project, not a Node
+      # package — it has no package.json, so it's deliberately excluded from
+      # the "Install Node dependencies" repo loop just below (a bare `pnpm
+      # install` against it fails immediately with ERR_PNPM_NO_PKG_MANIFEST,
+      # before this job ever reaches "Assemble native Linux runtime", which
+      # is what actually needs it). uv manages its own Python install on
+      # demand, so no separate actions/setup-python step is needed here.
+      - uses: astral-sh/setup-uv@v9
 
       - name: Install packaging tools
         run: |
@@ -159,8 +174,7 @@ jobs:
             anvilnote-web \
             anvilnote-api \
             anvilnote-renderer \
-            anvilnote-docx-exporter \
-            anvilnote-charts
+            anvilnote-docx-exporter
           do
             pnpm --dir "$repo" install --frozen-lockfile
           done

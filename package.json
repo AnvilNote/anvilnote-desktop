@@ -1,6 +1,6 @@
 {
   "name": "anvilnote",
-  "version": "0.1.20",
+  "version": "0.1.21",
   "private": true,
   "license": "MIT",
   "description": "Offline-first writing and notes app",
@@ -39,6 +39,7 @@
     "fetch:typst:linux": "node scripts/fetch-typst-linux.mjs",
     "fetch:pandoc:linux": "node scripts/fetch-pandoc-linux.mjs",
     "dist:linux": "node scripts/dist-linux.mjs",
+    "dist:linux:native": "node scripts/dist-linux-native.mjs",
     "fetch:typst:windows": "node scripts/fetch-typst-windows.mjs",
     "fetch:pandoc:windows": "node scripts/fetch-pandoc-windows.mjs",
     "fetch:tectonic:target": "node scripts/fetch-tectonic-target.mjs",
