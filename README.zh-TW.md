@@ -152,6 +152,12 @@ pnpm dist:linux
 - [AnvilNote Renderer](https://github.com/AnvilNote/anvilnote-renderer)
 - [AnvilNote DOCX Exporter](https://github.com/AnvilNote/anvilnote-docx-exporter)
 
+## 支持 AnvilNote
+
+覺得 AnvilNote 還不錯嗎？可以請我們團隊喝杯咖啡，讓我們慢慢把它做好。
+
+[在 Ko-fi 上支持 AnvilNote](https://ko-fi.com/anvilnote)
+
 ## 授權
 
 本儲存庫採用 [MIT License](LICENSE)。
