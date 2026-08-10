@@ -10,6 +10,15 @@ function copyResolved(src, dest) {
   const stats = fs.lstatSync(src);
 
   if (stats.isSymbolicLink()) {
+    // Next's output-file-tracing can leave a symlink pointing at a package
+    // version it decided not to actually copy (e.g. a pnpm .pnpm/node_modules
+    // convenience link to a version nothing in the traced runtime graph
+    // requires) -- confirmed against a real standalone build. Skip rather
+    // than crash the whole copy over an entry nothing needs.
+    if (!fs.existsSync(src)) {
+      console.warn(`  skipping dangling symlink: ${src} -> ${fs.readlinkSync(src)}`);
+      return;
+    }
     copyResolved(fs.realpathSync(src), dest);
     return;
   }

@@ -2,9 +2,18 @@
 //
 // `next build` with output:"standalone" emits `.next/standalone/` (server.js,
 // package.json, .next server files, and a pnpm-shaped node_modules). We do NOT
-// copy its node_modules directly because Next may emit broken symlinks under
-// `.pnpm/node_modules/*`; instead we copy the server files and then install a
-// fresh hoisted production node_modules from the web repo's lockfile. Final
+// copy its node_modules directly (tried it: `copyDirectoryResolved` dereferences
+// pnpm's symlinks into real files, but pnpm's isolated layout *depends* on
+// those symlinks' realpaths for resolution -- e.g. `node_modules/next` is a
+// symlink into `.pnpm/next@<ver>/node_modules/next`, and Node resolves
+// `next`'s own dependencies, like @swc/helpers, by walking up from that
+// *real* path to find the sibling `.pnpm/next@<ver>/node_modules/@swc`
+// private-dependency symlinks. Flatten that symlink into real files at the
+// top level and those sibling deps are simply never found -- confirmed via a
+// real boot: `Cannot find module '@swc/helpers/_/_interop_require_default'`.
+// So instead we copy the server files and install a fresh hoisted production
+// node_modules from the web repo's lockfile, which sidesteps the isolated
+// layout entirely (flat, no cross-package symlink resolution needed). Final
 // layout:
 //
 //   dist/app/web/
