@@ -152,6 +152,14 @@ platform-specific user-data directory in `ai-attachments/`.
 - [AnvilNote Renderer](https://github.com/AnvilNote/anvilnote-renderer)
 - [AnvilNote DOCX Exporter](https://github.com/AnvilNote/anvilnote-docx-exporter)
 
+## Support AnvilNote
+
+AnvilNote is free and open source.
+
+If AnvilNote has been useful to you, you can support its continued development and help keep the project independent.
+
+[Support AnvilNote on Ko-fi](https://ko-fi.com/anvilnote)
+
 ## License
 
 This repository is licensed under the [MIT License](LICENSE).
