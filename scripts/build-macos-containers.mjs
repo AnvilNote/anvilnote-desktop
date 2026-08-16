@@ -71,6 +71,34 @@ function artifactPaths(releaseDir, arch) {
   };
 }
 
+// electron-builder's own artifact-name template omits the arch entirely for
+// whichever arch it treats as "default" — x64, since electron-builder.config
+// sets no mac.defaultArch — even though we always pass an explicit --x64/
+// --arm64 flag. So an x64 --prepackaged dmg/zip build actually lands at
+// "<productName>-<version>.<ext>" (no "-x64" at all), not the "-x64"-suffixed
+// path artifactPaths() above computes for our own naming scheme. Renaming
+// after the fact (rather than fighting electron-builder's naming) keeps
+// arm64 (whose own default-suffix path already happens to match ours) and
+// x64 both correct without depending on that internal default-arch quirk.
+function electronBuilderNativePath(releaseDir, arch, ext) {
+  const packageJson = JSON.parse(
+    fs.readFileSync(path.join(repoRoot, "package.json"), "utf8"),
+  );
+  const productName = builderConfig.productName || packageJson.name;
+  const suffix = arch === "x64" ? "" : `-${arch}`;
+  return path.join(releaseDir, `${productName}-${packageJson.version}${suffix}.${ext}`);
+}
+
+function normalizeArtifactName(nativePath, wantedPath) {
+  if (nativePath === wantedPath) return;
+  if (!fs.existsSync(nativePath)) {
+    throw new Error(`expected electron-builder to produce ${nativePath}, but it doesn't exist`);
+  }
+  fs.renameSync(nativePath, wantedPath);
+  const blockmap = `${nativePath}.blockmap`;
+  if (fs.existsSync(blockmap)) fs.renameSync(blockmap, `${wantedPath}.blockmap`);
+}
+
 function verifyApp(appPath, options) {
   run(
     "codesign",
@@ -80,7 +108,10 @@ function verifyApp(appPath, options) {
 }
 
 function buildAndSignDmg({ appPath, dmgPath, env, arch }) {
+  const releaseDir = path.dirname(dmgPath);
+  const nativePath = electronBuilderNativePath(releaseDir, arch, "dmg");
   fs.rmSync(dmgPath, { force: true });
+  fs.rmSync(nativePath, { force: true });
   run(
     "pnpm",
     [
@@ -98,6 +129,7 @@ function buildAndSignDmg({ appPath, dmgPath, env, arch }) {
     ],
     { env },
   );
+  normalizeArtifactName(nativePath, dmgPath);
 
   const identities = run(
     "security",
@@ -119,7 +151,10 @@ function buildAndSignDmg({ appPath, dmgPath, env, arch }) {
 // --prepackaged path, which just archives the given tree without touching
 // it) didn't silently corrupt the signature already baked into appPath.
 function buildZip({ appPath, zipPath, env, arch }) {
+  const releaseDir = path.dirname(zipPath);
+  const nativePath = electronBuilderNativePath(releaseDir, arch, "zip");
   fs.rmSync(zipPath, { force: true });
+  fs.rmSync(nativePath, { force: true });
   run(
     "pnpm",
     [
@@ -137,6 +172,7 @@ function buildZip({ appPath, zipPath, env, arch }) {
     ],
     { env },
   );
+  normalizeArtifactName(nativePath, zipPath);
 }
 
 function buildSignedPkg({ appPath, pkgPath, version, env }) {
