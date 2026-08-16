@@ -8,7 +8,6 @@ import { buildMacContainers } from "./build-macos-containers.mjs";
 const require = createRequire(import.meta.url);
 const { notarizeAndStapleMacApp } = require("./notarize-macos.cjs");
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const appPath = path.join(repoRoot, "release", "mac-arm64", "AnvilNote.app");
 const keychainProfile =
   process.env.ANVILNOTE_NOTARY_PROFILE?.trim() || "AnvilNote Notarization";
 
@@ -74,12 +73,14 @@ function assertReleasePreconditions() {
   );
 }
 
-function releaseEnvironment() {
+function releaseEnvironment(arch) {
   const env = {
     ...process.env,
     ANVILNOTE_MAC_RELEASE: "1",
     ANVILNOTE_NOTARY_PROFILE: keychainProfile,
     CSC_IDENTITY_AUTO_DISCOVERY: "true",
+    ANVILNOTE_BUILD_ARCH: arch,
+    ANVILNOTE_CHARTS_DIST: arch === "x64" ? "dist-x64" : "dist",
   };
 
   // A global qualifier for the Application identity also filters the PKG
@@ -90,18 +91,22 @@ function releaseEnvironment() {
   return env;
 }
 
-// Optional CLI arg to build only some containers, e.g. `node
-// scripts/release-macos.mjs dmg` to skip pkg/zip for a quick confirm-then-
-// continue cycle. Defaults to all three.
+// Optional CLI args: `node scripts/release-macos.mjs [dmg,pkg,zip] [arm64|x64]`.
+// Targets default to all three; arch defaults to the host arch.
 const requestedTargets = process.argv[2] ? process.argv[2].split(",") : ["dmg", "pkg", "zip"];
+const arch = process.argv[3] ?? process.env.ANVILNOTE_BUILD_ARCH ?? process.arch;
+if (arch !== "arm64" && arch !== "x64") {
+  throw new Error(`unsupported mac arch: ${arch} (expected arm64 or x64)`);
+}
+const appPath = path.join(repoRoot, "release", arch === "arm64" ? "mac-arm64" : "mac", "AnvilNote.app");
 
 try {
   assertReleasePreconditions();
-  const env = releaseEnvironment();
+  const env = releaseEnvironment(arch);
 
   // Build and finalise the signed app first. The app must be notarized and
   // stapled before the DMG/PKG/zip staging pipelines read it.
-  run(process.execPath, ["scripts/build-macos.mjs", "dir"], env);
+  run(process.execPath, ["scripts/build-macos.mjs", "dir", arch], env);
   await notarizeAndStapleMacApp(appPath, { keychainProfile });
 
   const packagingEnv = { ...env, ANVILNOTE_MAC_RELEASE: "0" };
@@ -109,6 +114,7 @@ try {
     appPath,
     targets: requestedTargets,
     env: packagingEnv,
+    arch,
   });
   run(process.execPath, ["scripts/staple-macos-artifacts.mjs"], env);
   run(process.execPath, ["scripts/verify-macos-artifacts.mjs"], env);
