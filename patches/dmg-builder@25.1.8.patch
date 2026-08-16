@@ -1,0 +1,13 @@
+diff --git a/out/dmg.js b/out/dmg.js
+index 94af8a1b68e8da1c412ef147a35cafd6cf65010d..d91dad85f9f177f168fda0f66815b2e9e8370d99 100644
+--- a/out/dmg.js
++++ b/out/dmg.js
+@@ -36,7 +36,7 @@ class DmgTarget extends app_builder_lib_1.Target {
+         // https://github.com/electron-userland/electron-builder/issues/2115
+         const backgroundFile = specification.background == null ? null : await transformBackgroundFileIfNeed(specification.background, packager.info.tempDirManager);
+         const finalSize = await computeAssetSize(packager.info.cancellationToken, tempDmg, specification, backgroundFile);
+-        const expandingFinalSize = finalSize * 0.1 + finalSize;
++        const expandingFinalSize = Math.ceil(finalSize * 0.1 + finalSize);
+         await (0, hdiuil_1.hdiUtil)(["resize", "-size", expandingFinalSize.toString(), tempDmg]);
+         const volumePath = path.join("/Volumes", volumeName);
+         if (await (0, builder_util_1.exists)(volumePath)) {
