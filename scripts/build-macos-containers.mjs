@@ -79,7 +79,7 @@ function verifyApp(appPath, options) {
   );
 }
 
-function buildAndSignDmg({ appPath, dmgPath, env }) {
+function buildAndSignDmg({ appPath, dmgPath, env, arch }) {
   fs.rmSync(dmgPath, { force: true });
   run(
     "pnpm",
@@ -90,6 +90,7 @@ function buildAndSignDmg({ appPath, dmgPath, env }) {
       appPath,
       "--mac",
       "dmg",
+      arch === "arm64" ? "--arm64" : "--x64",
       "--config",
       "electron-builder.config.cjs",
       "--publish",
@@ -117,7 +118,7 @@ function buildAndSignDmg({ appPath, dmgPath, env }) {
 // thing worth verifying here is that zipping (via electron-builder's own
 // --prepackaged path, which just archives the given tree without touching
 // it) didn't silently corrupt the signature already baked into appPath.
-function buildZip({ appPath, zipPath, env }) {
+function buildZip({ appPath, zipPath, env, arch }) {
   fs.rmSync(zipPath, { force: true });
   run(
     "pnpm",
@@ -128,6 +129,7 @@ function buildZip({ appPath, zipPath, env }) {
       appPath,
       "--mac",
       "zip",
+      arch === "arm64" ? "--arm64" : "--x64",
       "--config",
       "electron-builder.config.cjs",
       "--publish",
@@ -219,7 +221,7 @@ export function buildMacContainers({
   verifyApp(appPath, { env });
 
   if (requested.has("dmg")) {
-    buildAndSignDmg({ appPath, dmgPath: artifacts.dmg, env });
+    buildAndSignDmg({ appPath, dmgPath: artifacts.dmg, env, arch });
     verifyApp(appPath, { env });
   }
   if (requested.has("pkg")) {
@@ -232,7 +234,7 @@ export function buildMacContainers({
     verifyApp(appPath, { env });
   }
   if (requested.has("zip")) {
-    buildZip({ appPath, zipPath: artifacts.zip, env });
+    buildZip({ appPath, zipPath: artifacts.zip, env, arch });
     verifyApp(appPath, { env });
   }
 
