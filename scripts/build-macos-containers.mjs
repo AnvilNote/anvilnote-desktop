@@ -86,7 +86,12 @@ function electronBuilderNativePath(releaseDir, arch, ext) {
   );
   const productName = builderConfig.productName || packageJson.name;
   const suffix = arch === "x64" ? "" : `-${arch}`;
-  return path.join(releaseDir, `${productName}-${packageJson.version}${suffix}.${ext}`);
+  // electron-builder's "mac zip" target uses a distinct default artifactName
+  // template from every other mac target (the electron-updater feed
+  // convention: "<name>-<version>-mac[-<arch>].zip"), not the plain
+  // "<name>-<version>[-<arch>].<ext>" every other target (dmg, pkg) uses.
+  const stem = ext === "zip" ? `${productName}-${packageJson.version}-mac${suffix}` : `${productName}-${packageJson.version}${suffix}`;
+  return path.join(releaseDir, `${stem}.${ext}`);
 }
 
 function normalizeArtifactName(nativePath, wantedPath) {
